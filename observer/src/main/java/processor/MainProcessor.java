@@ -1,26 +1,49 @@
 package processor;
 
-import bot.ActionBot;
-import bot.imp.MoveBot;
-import bot.imp.ShootBot;
+import enums.Action;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainProcessor {
 
-    private final ExecutorService executor;
-    private final ActionBot[] actionBots;
+    private final List<Action> actions;
+    private int highestPrio;
+    private int msgCount;
 
-    public MainProcessor(ExecutorService executor, ActionBot[] actionBots) {
-        this.executor = executor;
-        this.actionBots = actionBots;
+
+    public MainProcessor() {
+        this.actions = new ArrayList<>();
+        this.highestPrio = 0;
+        msgCount = 0;
     }
 
     public void execute() {
-        if (executor == null) return;
-        if (actionBots == null) return;
+        if (actions.isEmpty()) return;
 
+        System.out.println(actions.get(0));
+
+        actions.clear();
+        highestPrio = 0;
     }
+
+    public synchronized void sendMessage(Action action, int priority) {
+        this.msgCount += 1;
+
+        if (priority > highestPrio) {
+            actions.clear();
+            actions.add(action);
+            highestPrio = priority;
+        } else if (priority == highestPrio) {
+            actions.add(action);
+        }
+
+        if (msgCount == 2) {
+            execute();
+            System.out.println(msgCount);
+            msgCount = 0;
+        }
+    }
+
 
 }
