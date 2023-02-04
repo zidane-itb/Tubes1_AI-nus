@@ -20,7 +20,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
         int max = 100; // Maximum value of range
         int random_int = (int)Math.floor(Math.random() * (max - min + 1) + min);
         TimeUnit.MILLISECONDS.sleep(100);
-        botProcessor.sendMessage(new PlayerAction(), random_int);
+        botProcessor.sendMessage(new PlayerAction(), 0);
       //  System.out.println("shoot bot is executed.");
     }
 }
