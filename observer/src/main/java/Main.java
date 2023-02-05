@@ -1,8 +1,9 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import etc.ExecHandler;
 
-public class Main {}
+public class Main {
+
+    public static void main(String[] args) throws InterruptedException {
+        ExecHandler.start();
+    }
+
+}

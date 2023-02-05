@@ -21,7 +21,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     private final BotProcessor botProcessor;
     private final StateHolder stateHolder;
 
-    public void run() throws InterruptedException {
+    public void run() {
         int min = 50;
         int max = 100;
         int random_int = (int)Math.floor(Math.random() * (max - min + 1) + min);

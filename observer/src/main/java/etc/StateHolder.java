@@ -1,5 +1,6 @@
 package etc;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import model.engine.GameObject;
@@ -10,9 +11,13 @@ import java.util.Optional;
 @Getter @Setter
 public class StateHolder {
 
+    @Setter(AccessLevel.NONE)
     private GameState gameState;
     private GameObject bot;
 
+    public StateHolder() {
+        gameState = new GameState();
+    }
 
     public void setGameState(GameState gameState) {
         this.gameState = gameState;

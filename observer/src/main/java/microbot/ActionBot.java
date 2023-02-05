@@ -2,6 +2,6 @@ package microbot;
 
 public interface ActionBot {
 
-    void run() throws InterruptedException;
+    void run();
 
 }

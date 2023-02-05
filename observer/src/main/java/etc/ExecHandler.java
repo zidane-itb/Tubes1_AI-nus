@@ -29,34 +29,16 @@ public class ExecHandler {
     private static ActionBot[] actionBots;
     private static ExecutorService executor;
 
-    private static void whileVer() throws InterruptedException {
-        while (true) {
-            if (!isAllThreadsIdle())
-                continue;
-
-            runBots();
-        }
-    }
-
     public static boolean isAllThreadsIdle() {
         return ((ThreadPoolExecutor) executor).getActiveCount() == 0;
     }
 
-    private static void runBots() {
-        for (ActionBot actionBot : actionBots) {
-            executor.execute(() -> {
-                try {
-                    actionBot.run();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-    }
-
-    private static void start() throws InterruptedException {
+    public static void start() throws InterruptedException {
         Logger logger = LoggerFactory.getLogger(Main.class);
         BotProcessor botProcessor = new BotProcessor();
+        StateHolder stateHolder = new StateHolder();
+        actionBots = new ActionBot[]{new MoveBot(botProcessor, stateHolder), new ShootBot(botProcessor, stateHolder)};
+        executor = Executors.newFixedThreadPool(actionBots.length);
         String token = System.getenv("Token");
         token = (token != null) ? token : UUID.randomUUID().toString();
 
@@ -69,10 +51,6 @@ public class ExecHandler {
 
         HubConnection hubConnection = HubConnectionBuilder.create(url)
                 .build();
-
-        StateHolder stateHolder = new StateHolder();
-        actionBots = new ActionBot[]{new MoveBot(botProcessor, stateHolder), new ShootBot(botProcessor, stateHolder)};
-        executor = Executors.newFixedThreadPool(actionBots.length);
 
         hubConnection.on("Disconnect", (id) -> {
             System.out.println("Disconnected:");
@@ -93,6 +71,8 @@ public class ExecHandler {
             gameState.world = gameStateDto.getWorld();
 
             for (Map.Entry<String, List<Integer>> objectEntry : gameStateDto.getGameObjects().entrySet()) {
+                UUID uuid = UUID.fromString(objectEntry.getKey());
+
                 gameState.getGameObjects().add(GameObject.FromStateList(UUID.fromString(objectEntry.getKey()), objectEntry.getValue()));
             }
 
@@ -100,9 +80,13 @@ public class ExecHandler {
                 gameState.getPlayerGameObjects().add(GameObject.FromStateList(UUID.fromString(objectEntry.getKey()), objectEntry.getValue()));
             }
 
-            // move game state from bot processor
             stateHolder.setGameState(gameState);
+
         }, GameStateDto.class);
+
+        hubConnection.on("ReceivePlayerConsumed", () -> {
+            System.out.println("mati");
+        });
 
         hubConnection.start().blockingAwait();
 
@@ -113,7 +97,14 @@ public class ExecHandler {
         //This is a blocking call
         hubConnection.start().subscribe(() -> {
             while (hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
-                if (!isAllThreadsIdle() || !botProcessor.isResultExist())
+                if (isAllThreadsIdle()) {
+                    for (ActionBot actionBot: actionBots) {
+                        executor.execute(actionBot::run);
+                    }
+                    continue;
+                }
+
+                if (!botProcessor.isResultExist())
                     continue;
 
                 GameObject bot = stateHolder.getBot();
@@ -129,13 +120,7 @@ public class ExecHandler {
                 }
 
                 for (ActionBot actionBot: actionBots) {
-                    executor.execute(() -> {
-                        try {
-                            actionBot.run();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                    executor.execute(actionBot::run);
                 }
 
             }
