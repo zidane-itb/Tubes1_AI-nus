@@ -35,10 +35,16 @@ public class ExecHandler {
 
     public static void start() throws InterruptedException {
         Logger logger = LoggerFactory.getLogger(Main.class);
+
         BotProcessor botProcessor = new BotProcessor();
         StateHolder stateHolder = new StateHolder();
-        actionBots = new ActionBot[]{new MoveBot(botProcessor, stateHolder), new ShootBot(botProcessor, stateHolder)};
+
+        actionBots = new ActionBot[]{
+            new MoveBot(botProcessor, stateHolder), 
+            new ShootBot(botProcessor, stateHolder)
+        };
         executor = Executors.newFixedThreadPool(actionBots.length);
+        
         String token = System.getenv("Token");
         token = (token != null) ? token : UUID.randomUUID().toString();
 
