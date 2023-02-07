@@ -7,6 +7,7 @@ import microbot.ActionBot;
 import microbot.ActionCalculator;
 import model.engine.GameState;
 import model.engine.PlayerAction;
+import model.engine.Position;
 import processor.BotProcessor;
 
 import java.util.Comparator;
@@ -42,6 +43,19 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         }
 
         botProcessor.sendMessage(playerAction, random_int);
+
+        Position midPoint = new Position();
+
+        if(!gameState.getPlayerGameObjects().isEmpty()){
+            var playerList = gameState.getPlayerGameObjects()
+                .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER)
+                // .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
+                // .limit(max)
+                .map(player -> player.getPosition())
+                .collect(Collectors.toList());
+            
+            midPoint = Position.getCentroid(playerList);
+        }
 
     }
 }
