@@ -32,9 +32,15 @@ public class Position {
       .stream()
       .forEach((myPos) -> {
           centroid.moveXY(myPos.getX(), myPos.getY());
+          // System.out.println(centroid.x + ", " + centroid.y);
         });
     
-    centroid.multiplyBy(1/listOfPos.size());
+        // System.out.println("veear " + centroid.x + ", " + centroid.y);
+    // centroid.multiplyBy(1f/listOfPos.size());
+        centroid.setX(centroid.x/listOfPos.size());
+        centroid.setY(centroid.y/listOfPos.size());
+
+        
 
     return centroid;
   }
@@ -63,5 +69,10 @@ public class Position {
   public void multiplyBy(int multiplier){
     this.x *= multiplier;
     this.y *= multiplier;
+  }
+
+  public void multiplyBy(float multiplier){
+    this.x = (int) (this.x * multiplier);
+    this.y = (int) (this.x * multiplier);
   }
 }
