@@ -1,5 +1,6 @@
 package etc;
 
+import benchmark.TimeTester;
 import com.sun.tools.javac.Main;
 import enums.ObjectTypeEn;
 import model.engine.GameObject;
@@ -69,19 +70,16 @@ public class ExecHandler {
         hubConnection.on("ReceiveGameState", (gameStateDto) -> {
             GameState gameState = new GameState();
             gameState.world = gameStateDto.getWorld();
-
             for (Map.Entry<String, List<Integer>> objectEntry : gameStateDto.getGameObjects().entrySet()) {
                 UUID uuid = UUID.fromString(objectEntry.getKey());
 
                 gameState.getGameObjects().add(GameObject.FromStateList(UUID.fromString(objectEntry.getKey()), objectEntry.getValue()));
             }
-
             for (Map.Entry<String, List<Integer>> objectEntry : gameStateDto.getPlayerObjects().entrySet()) {
                 gameState.getPlayerGameObjects().add(GameObject.FromStateList(UUID.fromString(objectEntry.getKey()), objectEntry.getValue()));
+
             }
-
             stateHolder.setGameState(gameState);
-
         }, GameStateDto.class);
 
         hubConnection.on("ReceivePlayerConsumed", () -> {
@@ -103,26 +101,22 @@ public class ExecHandler {
                     }
                     continue;
                 }
-
                 if (!botProcessor.isResultExist())
                     continue;
-
                 GameObject bot = stateHolder.getBot();
                 if (bot == null) {
                     continue;
                 }
-
                 PlayerAction playerAction = botProcessor.getPlayerAction();
                 playerAction.setPlayerId(bot.getId());
-
                 if (hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
                     hubConnection.send("SendPlayerAction", playerAction);
+                    if (!isAllThreadsIdle())
+                        continue;
                 }
-
                 for (ActionBot actionBot: actionBots) {
                     executor.execute(actionBot::run);
                 }
-
             }
         });
 
