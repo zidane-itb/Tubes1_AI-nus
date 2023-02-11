@@ -26,7 +26,7 @@ public class StateHolder {
 
     private void updateSelfState() {
         Optional<GameObject> optionalBot = gameState.getPlayerGameObjects()
-                .stream().filter(gameObject -> gameObject.id.equals(bot.id)).findAny();
+                .stream().filter(gameObject -> gameObject.getId().equals(bot.getId())).findAny();
         optionalBot.ifPresent(bot -> this.bot = bot);
     }
 
