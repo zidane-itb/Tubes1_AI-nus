@@ -71,8 +71,8 @@ public class ExecHandler {
             System.out.println("Registered with the runner " + id);
 
             Position position = new Position();
-            List<Integer> stateList = Stream.of(10, 20, 0, position.x, position.y, ObjectTypeEn.PLAYER)
-                                        .map(item -> (int)item)
+            List<Integer> stateList = Stream.of(10, 20, 0, ObjectTypeEn.toValue(ObjectTypeEn.PLAYER), position.x, position.y)
+                                        // .map(item -> (Integer)item)
                                         .collect(Collectors.toList());
             GameObject bot = GameObject.FromStateList((id), stateList);
             stateHolder.setBot(bot);

@@ -23,7 +23,16 @@ public enum ObjectTypeEn {
     for (ObjectTypeEn objectType : ObjectTypeEn.values()) {
       if (objectType.value == value) return objectType;
     }
-
+  
     throw new IllegalArgumentException("Value not found");
+  }
+
+  public static Integer toValue(ObjectTypeEn key){
+    
+    for (ObjectTypeEn objectType : ObjectTypeEn.values()) {
+      if (objectType.value == key.value) return objectType.value;
+    }
+
+    throw new IllegalArgumentException("toValue : Value not found");
   }
 }
