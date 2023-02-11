@@ -1,6 +1,6 @@
 package etc;
 
-import benchmark.TimeTester;
+// import benchmark.TimeTester;
 import com.sun.tools.javac.Main;
 import enums.ObjectTypeEn;
 import model.engine.GameObject;
@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -69,7 +71,10 @@ public class ExecHandler {
             System.out.println("Registered with the runner " + id);
 
             Position position = new Position();
-            GameObject bot = new GameObject(id, 10, 20, 0, position, ObjectTypeEn.PLAYER);
+            List<Integer> stateList = Stream.of(10, 20, 0, position.x, position.y, ObjectTypeEn.PLAYER)
+                                        .map(item -> (int)item)
+                                        .collect(Collectors.toList());
+            GameObject bot = GameObject.FromStateList((id), stateList);
             stateHolder.setBot(bot);
         }, UUID.class);
 
