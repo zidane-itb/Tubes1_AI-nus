@@ -97,6 +97,10 @@ public class ExecHandler {
             System.out.println("mati");
         });
 
+        hubConnection.on("ReceiveGameComplete", () -> {
+            System.out.println("GAME ENDED");
+        });
+
         hubConnection.start().blockingAwait();
 
         Thread.sleep(1000);
