@@ -26,8 +26,7 @@ public class ActionCalculator {
     }
 
     protected boolean isInRadius(GameObject object, GameObject target, double radius) {
-
-        return true;
+        return getDistanceBetween(object, target) <= radius;
     }
 
     protected void sendMessage(PlayerAction playerAction, int prio) {
