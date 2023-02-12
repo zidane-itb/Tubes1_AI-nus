@@ -4,8 +4,13 @@ package microbot;
 
 import model.engine.Position;
 import model.engine.GameObject;
+import model.engine.PlayerAction;
+import processor.BotProcessor;
 
 public class ActionCalculator {
+
+    private PlayerAction playerAction;
+    private int prio;
 
     protected double getDistanceBetween(GameObject object1, GameObject object2) {
         var triangleX = Math.abs(object1.getPosition().x - object2.getPosition().x);
@@ -60,6 +65,24 @@ public class ActionCalculator {
 
     protected int lerpInt(float value, int a, int b){
         return (int)(clampFloat(value, 0, 1) * (b - a) + a);
+    }
+    
+    protected boolean isInRadius(GameObject object, GameObject target, double radius) {
+
+        return true;
+    }
+
+    protected void sendMessage(PlayerAction playerAction, int prio) {
+        if (this.prio > prio) {
+            return;
+        }
+        this.playerAction = playerAction;
+        this.prio = prio;
+    }
+
+    protected void signalDone(BotProcessor botProcessor) {
+        botProcessor.sendMessage(playerAction, prio);
+        prio = -1;
     }
     
 }

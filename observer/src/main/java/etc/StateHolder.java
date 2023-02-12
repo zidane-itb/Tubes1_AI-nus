@@ -6,7 +6,9 @@ import lombok.Setter;
 import model.engine.GameObject;
 import model.engine.GameState;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Getter @Setter
 public class StateHolder {
@@ -14,6 +16,7 @@ public class StateHolder {
     @Setter(AccessLevel.NONE)
     private GameState gameState;
     private GameObject bot;
+    private Map<UUID, GameObject> playerMap;
 
     public StateHolder() {
         gameState = new GameState();
