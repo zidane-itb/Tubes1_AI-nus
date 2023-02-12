@@ -31,7 +31,7 @@ public class ActionCalculator {
     }
 
     protected void sendMessage(PlayerAction playerAction, int prio) {
-        if (this.prio <= prio) {
+        if (this.prio > prio) {
             return;
         }
         this.playerAction = playerAction;
