@@ -37,6 +37,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
     private final BotProcessor botProcessor;
     private final StateHolder stateHolder;
+    private final PlayerAction playerAction; // ngikutin constructor lombok
 
     abstract class MoveBotStrategy{
         final int randomOffset = 3;

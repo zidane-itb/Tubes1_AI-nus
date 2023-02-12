@@ -41,8 +41,10 @@ public class ExecHandler {
 
         BotProcessor botProcessor = new BotProcessor();
         StateHolder stateHolder = new StateHolder();
-        actionBots = new ActionBot[]{new MoveBot(botProcessor, stateHolder, new PlayerAction()),
-                new ShootBot(botProcessor, stateHolder, new PlayerAction())};
+        actionBots = new ActionBot[]{
+            new MoveBot(botProcessor, stateHolder, new PlayerAction()),
+            new ShootBot(botProcessor, stateHolder, new PlayerAction())
+        };
         executor = Executors.newFixedThreadPool(actionBots.length);
         
         String token = System.getenv("Token");
@@ -68,11 +70,10 @@ public class ExecHandler {
             System.out.println("Registered with the runner " + id);
 
             Position position = new Position();
-            // List<Integer> stateList = Stream.of(10, 20, 0, ObjectTypeEn.toValue(ObjectTypeEn.PLAYER), position.x, position.y)
-            //                             // .map(item -> (Integer)item)
-            //                             .collect(Collectors.toList());
-            // GameObject bot = GameObject.FromStateList((id), stateList);
-            GameObject bot = new GameObject(id, 10, 20, 0, position, ObjectTypeEn.PLAYER);
+            List<Integer> stateList = Stream.of(10, 20, 0, ObjectTypeEn.toValue(ObjectTypeEn.PLAYER), position.x, position.y)
+                                        .collect(Collectors.toList());
+            GameObject bot = GameObject.FromStateList((id), stateList);
+            // GameObject bot = new GameObject(id, 10, 20, 0, position, ObjectTypeEn.PLAYER);
             stateHolder.setBot(bot);
         }, UUID.class);
 
