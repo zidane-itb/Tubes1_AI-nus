@@ -15,12 +15,14 @@ import model.engine.PlayerAction;
 import model.engine.Position;
 import processor.BotProcessor;
 
+import java.util.List;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.Random;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import etc.StateHolder;
 
@@ -223,27 +225,35 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
         FoodChase foodChase = new FoodChase();
         EnemyEvade enemyEvade = new EnemyEvade();
+        EnemyChase enemyChase = new EnemyChase();
         
-        PlayerAction toExecute = foodChase.getDesire() > enemyEvade.getDesire() ? foodChase.getPlayerAction() : enemyEvade.getPlayerAction();
+        // PlayerAction toExecute = foodChase.getDesire() > enemyEvade.getDesire() ? foodChase.getPlayerAction() : enemyEvade.getPlayerAction();
 
         // deltaTime = Duration.between(lastCheckTime, Instant.now());
         currentWaitTime -= Duration.between(lastCheckTime, Instant.now()).toNanos();
         lastCheckTime = Instant.now();
 
-        if(foodChase.getDesire() > enemyEvade.getDesire()){
-            if(currentWaitTime <= 0){
-                System.out.println("foodchase -> " + foodChase.getDesire() + " > " + enemyEvade.getDesire());
-                System.out.println("size" + stateHolder.getBot().getSize());
-            }
-        } else {
-            if(currentWaitTime <= 0){
-                System.out.println("enemyeva -> " + enemyEvade.getDesire() + " > " + foodChase.getDesire());
-                System.out.println("size" + stateHolder.getBot().getSize());
-            }
-        }
+        List<MoveBotStrategy> toCalculate = Stream.of(foodChase, enemyEvade, enemyChase).collect(Collectors.toList());
+        // if(foodChase.getDesire() > enemyEvade.getDesire()){
+        //     if(currentWaitTime <= 0){
+        //         System.out.println("foodchase -> " + foodChase.getDesire() + " > " + enemyEvade.getDesire());
+        //         System.out.println("size" + stateHolder.getBot().getSize());
+        //     }
+        // } else {
+        //     if(currentWaitTime <= 0){
+        //         System.out.println("enemyeva -> " + enemyEvade.getDesire() + " > " + foodChase.getDesire());
+        //         System.out.println("size" + stateHolder.getBot().getSize());
+        //     }
+        // }
+
+        MoveBotStrategy toExecute = toCalculate
+            .stream()
+            .sorted(Comparator.comparing(movebot -> movebot.getDesire()))
+            .collect(Collectors.toList()).get(toCalculate.size()-1);
 
         if(currentWaitTime <= 0){
             currentWaitTime = defaultWaitTime;
+            System.out.println("size" + stateHolder.getBot().getSize());
         }
         // System.out.println(toExecute.heading + " " + toExecute.action);
 
@@ -253,7 +263,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         //     System.out.println("chasing food to " + foodChase.getPlayerAction().heading);
         // }
         // toExecute.describe();
-        botProcessor.sendMessage(toExecute, enemyEvade.getDesire());
+        botProcessor.sendMessage(toExecute.getPlayerAction(), 100);
         
 
     }
