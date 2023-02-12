@@ -2,6 +2,7 @@ package microbot.imp;
 
 import enums.ObjectTypeEn;
 import enums.PlayerActionEn;
+import etc.DebugUtil;
 import etc.StateHolder;
 import lombok.RequiredArgsConstructor;
 import microbot.ActionBot;
@@ -21,6 +22,8 @@ public class ShootBot extends ActionCalculator implements ActionBot {
     private final StateHolder stateHolder;
     private final PlayerAction playerAction;
 
+    DebugUtil sUtil = new DebugUtil("ShootBot", 5);
+
     public void run() {
         if (stateHolder.getBot() != null && stateHolder.getBot().getSize() < 15) {
             botProcessor.sendMessage(playerAction, 0);
@@ -35,12 +38,17 @@ public class ShootBot extends ActionCalculator implements ActionBot {
                     .stream().filter(item -> item.getGameObjectType() == ObjectTypeEn.PLAYER)
                     .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
                     .collect(Collectors.toList());
-            System.out.println(list.get(0).getId());
+            // System.out.println(list.get(0).getId());
+
+            sUtil.TriggerMessage(list.get(0).getId());
+
 
             playerAction.setHeading(getHeadingBetween(stateHolder.getBot(), list.get(0)));
         }
 
         botProcessor.sendMessage(playerAction, 999);
       //  System.out.println("shoot bot is executed.");
+
+      sUtil.Update();
     }
 }

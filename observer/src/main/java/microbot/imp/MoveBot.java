@@ -25,15 +25,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import etc.StateHolder;
+import etc.DebugUtil;
 
 @RequiredArgsConstructor
 @Getter @Setter
 public class MoveBot  extends ActionCalculator implements ActionBot {
 
-    long currentWaitTime = 0;
-    long defaultWaitTime = 2 * 1_000_000_000;
-    Duration deltaTime = Duration.ZERO;
-    Instant lastCheckTime = Instant.now();
+    // long currentWaitTime = 0;
+    // long defaultWaitTime = 2 * 1_000_000_000;
+    // Duration deltaTime = Duration.ZERO;
+    // Instant lastCheckTime = Instant.now();
+
+    DebugUtil playerDebug = new DebugUtil("MoveBot", 2);
+
+    //TODO : chaseplayer, evadeboundary
 
     private final BotProcessor botProcessor;
     private final StateHolder stateHolder;
@@ -93,9 +98,10 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 
                 this.desireAmount = lerpInt((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold, 70, 85);
 
-                if(currentWaitTime <= 0){
-                    System.out.println((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold + " dari " + (float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold) + " / " + this.foodAmoundThreshold);
-                }
+                playerDebug.TriggerMessage((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold + " dari " + (float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold) + " / " + this.foodAmoundThreshold);
+                // if(currentWaitTime <= 0){
+                //     System.out.println((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold + " dari " + (float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold) + " / " + this.foodAmoundThreshold);
+                // }
                 
             }
 
@@ -190,82 +196,31 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     
 
     public void run() {
-        // int min = 50;
-        // int max = 100;
-        // int random_int = (int)Math.floor(Math.random() * (max -   min + 1) + min);
-
-        // PlayerAction playerAction = new PlayerAction();
-        // GameState gameState = stateHolder.getGameState();
-
-        // playerAction.action = PlayerActionEn.FORWARD;
-        // playerAction.heading = new Random().nextInt(360);
-
-        // if (!gameState.getGameObjects().isEmpty()) {
-        //     var foodList = gameState.getGameObjects()
-        //             .stream().filter(item -> item.getGameObjectType() == ObjectTypeEn.FOOD)
-        //             .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
-        //             .collect(Collectors.toList());
-
-        //     playerAction.heading = getHeadingBetween(stateHolder.getBot(), foodList.get(0));
-        // }
-
-        // botProcessor.sendMessage(playerAction, random_int);
-
-        // Position midPoint = new Position();
-
-        // if(!gameState.getPlayerGameObjects().isEmpty()){
-        //     var playerList = gameState.getPlayerGameObjects()
-        //         .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER)
-        //         // .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
-        //         // .limit(max)
-        //         .map(player -> player.getPosition())
-        //         .collect(Collectors.toList());
-            
-        //     midPoint = Position.getCentroid(playerList);
-        // }
+        playerDebug.Update();
 
         FoodChase foodChase = new FoodChase();
         EnemyEvade enemyEvade = new EnemyEvade();
         EnemyChase enemyChase = new EnemyChase();
         
-        // PlayerAction toExecute = foodChase.getDesire() > enemyEvade.getDesire() ? foodChase.getPlayerAction() : enemyEvade.getPlayerAction();
+        // currentWaitTime -= Duration.between(lastCheckTime, Instant.now()).toNanos();
+        // lastCheckTime = Instant.now();
 
-        // deltaTime = Duration.between(lastCheckTime, Instant.now());
-        currentWaitTime -= Duration.between(lastCheckTime, Instant.now()).toNanos();
-        lastCheckTime = Instant.now();
+        
 
         List<MoveBotStrategy> toCalculate = Stream.of(foodChase, enemyEvade, enemyChase).collect(Collectors.toList());
-        // if(foodChase.getDesire() > enemyEvade.getDesire()){
-        //     if(currentWaitTime <= 0){
-        //         System.out.println("foodchase -> " + foodChase.getDesire() + " > " + enemyEvade.getDesire());
-        //         System.out.println("size" + stateHolder.getBot().getSize());
-        //     }
-        // } else {
-        //     if(currentWaitTime <= 0){
-        //         System.out.println("enemyeva -> " + enemyEvade.getDesire() + " > " + foodChase.getDesire());
-        //         System.out.println("size" + stateHolder.getBot().getSize());
-        //     }
-        // }
 
         MoveBotStrategy toExecute = toCalculate
             .stream()
             .sorted(Comparator.comparing(movebot -> movebot.getDesire()))
             .collect(Collectors.toList()).get(toCalculate.size()-1);
 
-        if(currentWaitTime <= 0){
-            currentWaitTime = defaultWaitTime;
-            System.out.println("size" + stateHolder.getBot().getSize());
-        }
-        // System.out.println(toExecute.heading + " " + toExecute.action);
-
-        // if (enemyEvade.getDesire() > foodChase.getDesire()){
-        //     System.out.println("evading to " + enemyEvade.getPlayerAction().heading);
-        // } else {
-        //     System.out.println("chasing food to " + foodChase.getPlayerAction().heading);
+        // if(currentWaitTime <= 0){
+        //     currentWaitTime = defaultWaitTime;
+        //     System.out.println("size" + stateHolder.getBot().getSize());
         // }
-        // toExecute.describe();
-        botProcessor.sendMessage(toExecute.getPlayerAction(), 100);
-        
 
+        playerDebug.TriggerMessage("size" + stateHolder.getBot().getSize());
+
+        botProcessor.sendMessage(toExecute.getPlayerAction(), 100);
     }
 }
