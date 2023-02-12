@@ -17,6 +17,7 @@ import com.microsoft.signalr.HubConnectionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -71,17 +72,29 @@ public class ExecHandler {
         hubConnection.on("ReceiveGameState", (gameStateDto) -> {
             GameState gameState = new GameState();
             gameState.world = gameStateDto.getWorld();
+            // we instantiate a new hash map instead of clearing it to move the object clearing ...
+            // ... to the garbage collection thread so this function won't wait for us to clear ...
+            // ... the existing map first
+            Map<UUID, GameObject> playerMap = new HashMap<>();
             for (Map.Entry<String, List<Integer>> objectEntry : gameStateDto.getGameObjects().entrySet()) {
                 gameState.getGameObjects().add(GameObject.FromStateList(UUID.fromString(objectEntry.getKey()), objectEntry.getValue()));
             }
             for (Map.Entry<String, List<Integer>> objectEntry : gameStateDto.getPlayerObjects().entrySet()) {
-                gameState.getPlayerGameObjects().add(GameObject.FromStateList(UUID.fromString(objectEntry.getKey()), objectEntry.getValue()));
+                UUID id = UUID.fromString(objectEntry.getKey());
+                GameObject player = GameObject.FromStateList(id, objectEntry.getValue());
+                gameState.getPlayerGameObjects().add(player);
+                playerMap.put(id, player);
             }
             stateHolder.setGameState(gameState);
+            stateHolder.setPlayerMap(playerMap);
         }, GameStateDto.class);
 
         hubConnection.on("ReceivePlayerConsumed", () -> {
             System.out.println("mati");
+        });
+
+        hubConnection.on("ReceiveGameCompleted", () -> {
+            System.out.println("selesai");
         });
 
         hubConnection.start().blockingAwait();
