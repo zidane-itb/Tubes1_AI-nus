@@ -1,16 +1,16 @@
 package enums;
 
 public enum PlayerActionEn {
-  FORWARD(1),
-  STOP(2),
-  STARTAFTERBURNER(3),
-  STOPAFTERBURNER(4),
-  FIRETORPEDOES(5),
-  FIRESUPERNOVA(6),
-  DETONATESUPERNOVA(7),
-  FIRETELEPORT(8),
-  TELEPORT(9),
-  ACTIVATESHIELD(10);
+  FORWARD(1), // Move
+  STOP(2), // Move
+  STARTAFTERBURNER(3), // Move
+  STOPAFTERBURNER(4), // Move
+  FIRETORPEDOES(5), // Shoot
+  FIRESUPERNOVA(6), // Shoot
+  DETONATESUPERNOVA(7), // Shoot
+  FIRETELEPORT(8), // Teleport
+  TELEPORT(9), // Teleport
+  ACTIVATESHIELD(10); // Shield
 
   public final Integer value;
 

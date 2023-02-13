@@ -1,9 +1,7 @@
 package etc;
 
-//import benchmark.TimeTester;
 import com.sun.tools.javac.Main;
 import enums.ObjectTypeEn;
-import microbot.imp.ShieldBot;
 import model.engine.GameObject;
 import model.engine.GameState;
 import model.engine.GameStateDto;
@@ -19,9 +17,12 @@ import com.microsoft.signalr.HubConnectionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -37,10 +38,15 @@ public class ExecHandler {
 
     public static void start() throws InterruptedException {
         Logger logger = LoggerFactory.getLogger(Main.class);
+
         BotProcessor botProcessor = new BotProcessor();
         StateHolder stateHolder = new StateHolder();
-        actionBots = new ActionBot[]{new MoveBot(botProcessor, stateHolder), new ShootBot(botProcessor, stateHolder), new ShieldBot(botProcessor, stateHolder)};
+        actionBots = new ActionBot[]{
+            new MoveBot(botProcessor, stateHolder, new PlayerAction()),
+            new ShootBot(botProcessor, stateHolder, new PlayerAction())
+        };
         executor = Executors.newFixedThreadPool(actionBots.length);
+        
         String token = System.getenv("Token");
         token = (token != null) ? token : UUID.randomUUID().toString();
 
@@ -64,34 +70,46 @@ public class ExecHandler {
             System.out.println("Registered with the runner " + id);
 
             Position position = new Position();
-            GameObject bot = new GameObject(id, 10, 20, 0, position, ObjectTypeEn.PLAYER, "0", 0, 0, 0, 0);
+            List<Integer> stateList = Stream.of(10, 20, 0, ObjectTypeEn.toValue(ObjectTypeEn.PLAYER), position.x, position.y)
+                                        .collect(Collectors.toList());
+            GameObject bot = GameObject.FromStateList((id), stateList);
+            // GameObject bot = new GameObject(id, 10, 20, 0, position, ObjectTypeEn.PLAYER);
             stateHolder.setBot(bot);
         }, UUID.class);
 
         hubConnection.on("ReceiveGameState", (gameStateDto) -> {
             GameState gameState = new GameState();
             gameState.world = gameStateDto.getWorld();
+            // we instantiate a new hash map instead of clearing it to move the object clearing ...
+            // ... to the garbage collection thread so this function won't wait for us to clear ...
+            // ... the existing map first
+            Map<UUID, GameObject> playerMap = new HashMap<>();
             for (Map.Entry<String, List<Integer>> objectEntry : gameStateDto.getGameObjects().entrySet()) {
-                UUID uuid = UUID.fromString(objectEntry.getKey());
-
                 gameState.getGameObjects().add(GameObject.FromStateList(UUID.fromString(objectEntry.getKey()), objectEntry.getValue()));
             }
             for (Map.Entry<String, List<Integer>> objectEntry : gameStateDto.getPlayerObjects().entrySet()) {
-                gameState.getPlayerGameObjects().add(GameObject.FromStateList(UUID.fromString(objectEntry.getKey()), objectEntry.getValue()));
-
+                UUID id = UUID.fromString(objectEntry.getKey());
+                GameObject player = GameObject.FromStateList(id, objectEntry.getValue());
+                gameState.getPlayerGameObjects().add(player);
+                playerMap.put(id, player);
             }
             stateHolder.setGameState(gameState);
+            stateHolder.setPlayerMap(playerMap);
         }, GameStateDto.class);
 
         hubConnection.on("ReceivePlayerConsumed", () -> {
             System.out.println("mati");
         });
 
+        hubConnection.on("ReceiveGameCompleted", () -> {
+            System.out.println("selesai");
+        });
+
         hubConnection.start().blockingAwait();
 
         Thread.sleep(1000);
         System.out.println("Registering with the runner...");
-        hubConnection.send("Register", token, "Coffee Bot");
+        hubConnection.send("Register", token, "AI-nus");
 
         //This is a blocking call
         hubConnection.start().subscribe(() -> {
