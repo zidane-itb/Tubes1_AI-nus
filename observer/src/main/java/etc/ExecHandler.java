@@ -1,8 +1,9 @@
 package etc;
 
-import benchmark.TimeTester;
+//import benchmark.TimeTester;
 import com.sun.tools.javac.Main;
 import enums.ObjectTypeEn;
+import microbot.imp.ShieldBot;
 import model.engine.GameObject;
 import model.engine.GameState;
 import model.engine.GameStateDto;
@@ -38,7 +39,7 @@ public class ExecHandler {
         Logger logger = LoggerFactory.getLogger(Main.class);
         BotProcessor botProcessor = new BotProcessor();
         StateHolder stateHolder = new StateHolder();
-        actionBots = new ActionBot[]{new MoveBot(botProcessor, stateHolder), new ShootBot(botProcessor, stateHolder)};
+        actionBots = new ActionBot[]{new MoveBot(botProcessor, stateHolder), new ShootBot(botProcessor, stateHolder), new ShieldBot(botProcessor, stateHolder)};
         executor = Executors.newFixedThreadPool(actionBots.length);
         String token = System.getenv("Token");
         token = (token != null) ? token : UUID.randomUUID().toString();
@@ -63,7 +64,7 @@ public class ExecHandler {
             System.out.println("Registered with the runner " + id);
 
             Position position = new Position();
-            GameObject bot = new GameObject(id, 10, 20, 0, position, ObjectTypeEn.PLAYER);
+            GameObject bot = new GameObject(id, 10, 20, 0, position, ObjectTypeEn.PLAYER, "0", 0, 0, 0, 0);
             stateHolder.setBot(bot);
         }, UUID.class);
 
