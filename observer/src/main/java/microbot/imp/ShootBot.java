@@ -9,6 +9,7 @@ import microbot.ActionCalculator;
 import model.engine.GameObject;
 import model.engine.GameState;
 import model.engine.PlayerAction;
+import model.engine.World;
 import processor.BotProcessor;
 
 import java.util.List;
@@ -27,6 +28,11 @@ public class ShootBot extends ActionCalculator implements ActionBot {
 
     public void run() {
         GameState gameState = stateHolder.getGameState();
+        GameObject bot = stateHolder.getBot();
+        if (bot == null) {
+            botProcessor.sendMessage(playerAction, -1);
+            return;
+        }
 
         if (snFired && gameState.getGameObjects() != null && !gameState.getGameObjects().isEmpty()) {
             GameObject sn = null;
@@ -36,70 +42,79 @@ public class ShootBot extends ActionCalculator implements ActionBot {
                     break;
                 }
             }
-            //|| gameState.getWorld().
-            if (sn != null && (isInRadius(sn, stateHolder.getPlayerMap().get(largestPlayerId), 20)
-                    )) {
-                sendMessage(playerAction, 999);
+            if (sn == null)
+                snFired = false;
+            GameObject target = stateHolder.getPlayerMap().get(largestPlayerId);
+            World world = gameState.getWorld();
+            if (sn != null && !isInRadius(bot, sn, 1.5*bot.getSize()) &&
+                    (isInRadius(sn, target, target.getSize()) ||
+                            !isInRadius(target, world.getCenterPoint(), 0.9 * world.radius))) {
+                playerAction.setAction(PlayerActionEn.DETONATESUPERNOVA);
+                sendMessage(playerAction, 5);
                 snFired = false;
             }
         }
-
-        if (stateHolder.getBot().isSnAvailable()) {
+        if (bot.isSnAvailable()) {
             supernova(gameState.getPlayerGameObjects());
         }
-        if (stateHolder.getBot() != null && stateHolder.getBot().getSize() < 15) {
+        if (stateHolder.getBot().getSize() < 25) {
             signalDone(botProcessor);
             return;
         }
-        torpedoes(gameState.getPlayerGameObjects());
+        torpedoes(gameState.getPlayerGameObjects(), bot);
 
         signalDone(botProcessor);
     }
 
     private void supernova(List<GameObject> playerObjects) {
-        playerAction.setAction(PlayerActionEn.FIRESUPERNOVA);
-        if (playerObjects != null && !playerObjects.isEmpty()) {
-            GameObject largestPlayer = null;
-            double size = -1, cSize;
-            for (GameObject player: playerObjects) {
-                cSize = player.getSize();
-                if (largestPlayer == null || cSize > size) {
-                    if (player.getId() == stateHolder.getBot().getId()) {
-                        continue;
-                    }
-                    largestPlayer = player; size = cSize;
+        if (playerObjects != null && playerObjects.isEmpty())
+            return;
+
+        GameObject largestPlayer = null;
+        double size = -1, cSize;
+        for (GameObject player: playerObjects) {
+            cSize = player.getSize();
+            if (largestPlayer == null || cSize > size) {
+                if (player.getId() == stateHolder.getBot().getId()) {
+                    continue;
                 }
+                largestPlayer = player; size = cSize;
             }
-            if (largestPlayer == null) {
-                return;
-            }
-            largestPlayerId = largestPlayer.getId();
-            playerAction.setHeading(getHeadingBetween(stateHolder.getBot(), largestPlayer));
         }
+        if (largestPlayer == null) {
+            return;
+        }
+        largestPlayerId = largestPlayer.getId();
+        playerAction.setAction(PlayerActionEn.FIRESUPERNOVA);
+        playerAction.setHeading(getHeadingBetween(stateHolder.getBot(), largestPlayer));
         snFired = true;
-        sendMessage(playerAction, 999);
+
+        sendMessage(playerAction, 3);
     }
 
-    private void torpedoes(List<GameObject> playerObjects) {
-        playerAction.setAction(PlayerActionEn.FIRETORPEDOES);
-        if (playerObjects != null && !playerObjects.isEmpty()) {
-            GameObject closestPlayer = null;
-            double dist = -1, cDist;
-            for (GameObject player: playerObjects) {
-                cDist = getDistanceBetween(stateHolder.getBot(), player);
-                if (closestPlayer == null || cDist < dist) {
-                    if (player.getId() == stateHolder.getBot().getId()) {
-                        continue;
-                    }
-                    closestPlayer = player; dist = cDist;
+    private void torpedoes(List<GameObject> playerObjects, GameObject bot) {
+        if (playerObjects != null && playerObjects.isEmpty())
+            return;
+
+        GameObject closestPlayer = null;
+        double closestDist = -1, temp;
+        for (GameObject player: playerObjects) {
+            temp = getDistanceBetween(bot, player);
+            if (closestPlayer == null || temp < closestDist) {
+                if (player.getId() == bot.getId()) {
+                    continue;
                 }
+                closestPlayer = player; closestDist = temp;
             }
-            if (closestPlayer == null) {
-                return;
-            }
-            playerAction.setHeading(getHeadingBetween(stateHolder.getBot(), closestPlayer));
         }
-        sendMessage(playerAction, 999);
+        if (closestPlayer == null || !(closestDist-closestPlayer.getSize() > 1.5*bot.getSize())) {
+            return;
+        }
+        playerAction.setAction(PlayerActionEn.FIRETORPEDOES);
+        playerAction.setHeading(getHeadingBetween(stateHolder.getBot(), closestPlayer));
+
+        sendMessage(playerAction, 3);
     }
+
 
 }
