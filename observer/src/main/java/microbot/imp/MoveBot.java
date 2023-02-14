@@ -16,11 +16,9 @@ import model.engine.Position;
 import processor.BotProcessor;
 
 import java.util.List;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Comparator;
 import java.util.Random;
-import java.util.stream.Collector;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,10 +29,6 @@ import etc.DebugUtil.TimedDebugLog;
 @Getter @Setter
 public class MoveBot  extends ActionCalculator implements ActionBot {
 
-    // long currentWaitTime = 0;
-    // long defaultWaitTime = 2 * 1_000_000_000;
-    // Duration deltaTime = Duration.ZERO;
-    // Instant lastCheckTime = Instant.now();
 
     TimedDebugLog playerDebug = new TimedDebugLog("MoveBot", 2);
 
@@ -99,9 +93,6 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 this.desireAmount = lerpInt((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold, 70, 85);
 
                 playerDebug.TriggerMessage((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold + " dari " + (float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold) + " / " + this.foodAmoundThreshold);
-                // if(currentWaitTime <= 0){
-                //     System.out.println((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold + " dari " + (float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold) + " / " + this.foodAmoundThreshold);
-                // }
                 
             }
 
@@ -115,8 +106,6 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         private int safeSizeThreshold = 10;
 
         void execute(){        
-            // Position midPoint = new Position();
-
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
                 var playerList = this.gameState.getPlayerGameObjects()
                     .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId())
@@ -155,9 +144,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
         private int safeSizeThreshold = 10;
 
-        void execute(){        
-            // Position midPoint = new Position();
-
+        void execute(){       
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
                 var playerList = this.gameState.getPlayerGameObjects()
                     .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId())
@@ -202,13 +189,8 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         EnemyEvade enemyEvade = new EnemyEvade();
         EnemyChase enemyChase = new EnemyChase();
         
-        // currentWaitTime -= Duration.between(lastCheckTime, Instant.now()).toNanos();
-        // lastCheckTime = Instant.now();
-
         if(stateHolder.getBot() == null)
             return;
-
-        
 
         List<MoveBotStrategy> toCalculate = Stream.of(foodChase, enemyEvade, enemyChase).collect(Collectors.toList());
 
@@ -216,11 +198,6 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
             .stream()
             .sorted(Comparator.comparing(movebot -> movebot.getDesire()))
             .collect(Collectors.toList()).get(toCalculate.size()-1);
-
-        // if(currentWaitTime <= 0){
-        //     currentWaitTime = defaultWaitTime;
-        //     System.out.println("size" + stateHolder.getBot().getSize());
-        // }
 
         playerDebug.TriggerMessage("size" + stateHolder.getBot().getSize());
 
