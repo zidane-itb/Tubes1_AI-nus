@@ -2,8 +2,8 @@ package microbot.imp;
 
 import enums.ObjectTypeEn;
 import enums.PlayerActionEn;
-import etc.DebugUtil;
 import etc.StateHolder;
+import etc.DebugUtil.CollapsingDebugLog;
 import lombok.RequiredArgsConstructor;
 import microbot.ActionBot;
 import microbot.ActionCalculator;
@@ -22,7 +22,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
     private final StateHolder stateHolder;
     private final PlayerAction playerAction;
 
-    DebugUtil sUtil = new DebugUtil("ShootBot", 5);
+    CollapsingDebugLog sUtil = new CollapsingDebugLog("ShootBot");
 
     public void run() {
         if (stateHolder.getBot() != null && stateHolder.getBot().getSize() < 15) {
@@ -48,7 +48,5 @@ public class ShootBot extends ActionCalculator implements ActionBot {
 
         botProcessor.sendMessage(playerAction, 999);
       //  System.out.println("shoot bot is executed.");
-
-      sUtil.Update();
     }
 }

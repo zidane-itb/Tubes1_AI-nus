@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import etc.StateHolder;
-import etc.DebugUtil;
+import etc.DebugUtil.TimedDebugLog;
 
 @RequiredArgsConstructor
 @Getter @Setter
@@ -36,7 +36,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     // Duration deltaTime = Duration.ZERO;
     // Instant lastCheckTime = Instant.now();
 
-    DebugUtil playerDebug = new DebugUtil("MoveBot", 2);
+    TimedDebugLog playerDebug = new TimedDebugLog("MoveBot", 2);
 
     //TODO : chaseplayer, evadeboundary
 
@@ -204,6 +204,9 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         
         // currentWaitTime -= Duration.between(lastCheckTime, Instant.now()).toNanos();
         // lastCheckTime = Instant.now();
+
+        if(stateHolder.getBot() == null)
+            return;
 
         
 

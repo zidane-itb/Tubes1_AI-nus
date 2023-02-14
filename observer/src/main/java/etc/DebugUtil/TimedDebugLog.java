@@ -1,29 +1,23 @@
-package etc;
+package etc.DebugUtil;
 
 import java.time.Instant;
-
-import com.ctc.wstx.shaded.msv_core.driver.textui.Debug;
-
 import java.time.Duration;
 
-public class DebugUtil {
-    private final static int secInNano = 1_000_000_000;
-
-    private final String idString;
+public class TimedDebugLog extends DebugLog {
+    final static int secInNano = 1_000_000_000;
 
     long currentWaitTime = 0;
-    private final long defaultWaitTime;
+    final long defaultWaitTime;
+
     Instant lastCheckTime = Instant.now();
 
-    public DebugUtil(){
-        this.idString = "default DebugUtil";
-        // this.messageString = "default message";
+    public TimedDebugLog(){
+        this.idString = "DefaultTimedDebug";
         this.defaultWaitTime = secondsToNano(2);
     }
 
-    public DebugUtil(String idString, int intervalInSeconds){
+    public TimedDebugLog(String idString, int intervalInSeconds){
         this.idString = idString;
-        // this.messageString = messageString;
         this.defaultWaitTime = secondsToNano(intervalInSeconds);
     }
 
@@ -32,22 +26,14 @@ public class DebugUtil {
             this.currentWaitTime = this.defaultWaitTime;
     }
 
-    public void TriggerMessage(String messageString){
-        currentWaitTime -= Duration.between(lastCheckTime, Instant.now()).toNanos();
-        lastCheckTime = Instant.now();
-        
-        if(currentWaitTime <= 0)
-            System.out.println(this.idString + " : " + messageString);
-    }
-
     public void TriggerMessage(Object messageString){
         currentWaitTime -= Duration.between(lastCheckTime, Instant.now()).toNanos();
         lastCheckTime = Instant.now();
         
         if(currentWaitTime <= 0)
             System.out.println(this.idString + " : " + messageString);
-    }
-    
+    }    
+
     private long secondsToNano(int seconds){
         return seconds * secInNano;
     }
