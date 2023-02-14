@@ -24,6 +24,12 @@ public class ActionCalculator {
         return Math.sqrt(triangleX * triangleX + triangleY * triangleY);
     }
 
+    protected double getDistanceBetween(GameObject object1, int x, int y) {
+        var triangleY = Math.abs(object1.getPosition().y - y);
+        var triangleX = Math.abs(object1.getPosition().x - x);
+        return Math.sqrt(triangleX * triangleX + triangleY * triangleY);
+    }
+
     protected int getHeadingBetween(GameObject bot, GameObject otherObject) {
         var direction = toDegrees(Math.atan2(otherObject.getPosition().y - bot.getPosition().y,
                 otherObject.getPosition().x - bot.getPosition().x));
@@ -69,6 +75,14 @@ public class ActionCalculator {
     
     protected boolean isInRadius(GameObject object, GameObject target, double radius) {
         return getDistanceBetween(object, target) <= radius;
+    }
+
+    protected boolean isInRadius(GameObject object, Position target, double radius) {
+        return getDistanceBetween(object, target) <= radius;
+    }
+
+    protected boolean isInRadius(GameObject object, int x, int y, double radius) {
+        return getDistanceBetween(object, x, y) <= radius;
     }
 
     protected void sendMessage(PlayerAction playerAction, int prio) {
