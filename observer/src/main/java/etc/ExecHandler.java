@@ -101,7 +101,7 @@ public class ExecHandler {
             System.out.println("mati");
         });
 
-        hubConnection.on("ReceiveGameCompleted", () -> {
+        hubConnection.on("ReceiveGameComplete", () -> {
             System.out.println("selesai");
         });
 
