@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 import etc.StateHolder;
 import etc.DebugUtil.TimedDebugLog;
 
-@RequiredArgsConstructor
+// @RequiredArgsConstructor
 @Getter @Setter
 public class MoveBot  extends ActionCalculator implements ActionBot {
 
@@ -36,12 +36,29 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
     private final BotProcessor botProcessor;
     private final StateHolder stateHolder;
-    private final PlayerAction playerAction; // ngikutin constructor lombok
+    private final PlayerAction playerAction;
+
+    List<MoveBotStrategy> moveBotStrategy;
+
+    public MoveBot(BotProcessor botProcessor, StateHolder stateHolder, PlayerAction playerAction){
+        this.botProcessor = botProcessor;
+        this.stateHolder = stateHolder;
+        this.playerAction = playerAction;
+
+        moveBotStrategy = Stream.of(
+            new FoodChase(),
+            new EnemyEvade(),
+            new EnemyChase(),
+            new EvadeBoundary()
+        )
+        .collect(Collectors.toList());
+    }
 
     abstract class MoveBotStrategy{
         final int randomOffset = 3;
 
         protected int desireAmount;
+        protected final int defaultDesireAmount = 40;
 
         @Getter(AccessLevel.PUBLIC)
         protected PlayerAction playerAction  = new PlayerAction();
@@ -50,19 +67,19 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
 
         public MoveBotStrategy(){
-            this.desireAmount = 40;
+            this.desireAmount = this.defaultDesireAmount;
 
-            execute();
-        }
-
-        public MoveBotStrategy(int defaultDesire){
-            this.desireAmount = defaultDesire;
-
-            execute();
+            this.playerAction.action = PlayerActionEn.FORWARD;
         }
 
         public int getDesire(){
             return clampInt((int)Math.floor(Math.random() * (2 * randomOffset) - randomOffset  + desireAmount), 0, 100);
+        }
+
+        public MoveBotStrategy Update(){
+            this.execute();
+
+            return this;
         }
 
         abstract void execute();
@@ -124,9 +141,11 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     .map(player -> player.getPosition())
                     .collect(Collectors.toList());
                 
-                if(biggerPL.isEmpty())
-                    return;
+                if(biggerPL.isEmpty()){
+                    this.desireAmount = 0;
 
+                    return;
+                }
 
                 if(getDistanceBetween(stateHolder.getBot(), biggerPL.get(0)) > thresholdRadius){
                     this.desireAmount = 50;
@@ -135,14 +154,13 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     this.desireAmount = lerpInt(1/(float)getDistanceBetween(stateHolder.getBot(), biggerPL.get(0)), 60, 85);
                 }
             }
-
         }
     }
 
     class EnemyChase extends MoveBotStrategy {
         private float thresholdRadius = 150f;
 
-        private int safeSizeThreshold = 10;
+        private int safeSizeThreshold = 20;
 
         void execute(){       
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
@@ -163,8 +181,11 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     .map(player -> player.getPosition())
                     .collect(Collectors.toList());
                 
-                if(smallerPL.isEmpty())
+                if(smallerPL.isEmpty()){
+                    this.desireAmount = 0;
                     return;
+                }
+                    
 
 
                 if(getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)) > thresholdRadius){
@@ -180,27 +201,41 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         }
     }
 
+    class EvadeBoundary extends MoveBotStrategy {
+        void execute(){
+            int distanceToBoundary = (int)getDistanceBetween(stateHolder.getBot(), new Position(0, 0)) - this.gameState.getWorld().getRadius();
+
+            if(distanceToBoundary > 0){
+                this.desireAmount = 0;
+                return;
+            }
+
+            distanceToBoundary = clampInt(distanceToBoundary, -100, 0);
+
+            this.playerAction.action = PlayerActionEn.FORWARD;
+            this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), this.gameState.getWorld().getCenterPoint());
+
+            this.desireAmount = lerpInt(distanceToBoundary/(-100f), 75, 90);
+
+            playerDebug.TriggerMessage("Keluar dari map, berusaha masuk. Distance from border : " + distanceToBoundary);
+        }
+    }
     
 
     public void run() {
         playerDebug.Update();
-
-        FoodChase foodChase = new FoodChase();
-        EnemyEvade enemyEvade = new EnemyEvade();
-        EnemyChase enemyChase = new EnemyChase();
         
         if(stateHolder.getBot() == null)
             return;
 
-        List<MoveBotStrategy> toCalculate = Stream.of(foodChase, enemyEvade, enemyChase).collect(Collectors.toList());
-
-        MoveBotStrategy toExecute = toCalculate
+        MoveBotStrategy toExecute = moveBotStrategy
             .stream()
+            .map(movebot -> movebot.Update())
             .sorted(Comparator.comparing(movebot -> movebot.getDesire()))
-            .collect(Collectors.toList()).get(toCalculate.size()-1);
+            .collect(Collectors.toList()).get(moveBotStrategy.size()-1);
 
         playerDebug.TriggerMessage("size" + stateHolder.getBot().getSize());
 
-        botProcessor.sendMessage(toExecute.getPlayerAction(), 100);
+        botProcessor.sendMessage(toExecute.getPlayerAction(), toExecute.getDesire());
     }
 }
