@@ -45,7 +45,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         this.stateHolder = stateHolder;
         this.playerAction = playerAction;
 
-        moveBotStrategy = Stream.of(
+        this.moveBotStrategy = Stream.of(
             new FoodChase(),
             new EnemyEvade(),
             new EnemyChase(),
@@ -62,7 +62,8 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
         @Getter(AccessLevel.PUBLIC)
         protected PlayerAction playerAction  = new PlayerAction();
-        protected GameState gameState = stateHolder.getGameState();
+        // protected GameState gameState = stateHolder.getGameState();
+        protected GameState gameState = new GameState();
 
 
 
@@ -76,10 +77,12 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
             return clampInt((int)Math.floor(Math.random() * (2 * randomOffset) - randomOffset  + desireAmount), 0, 100);
         }
 
-        public MoveBotStrategy Update(){
-            this.execute();
+        public void Update(){
+            
+            this.gameState = stateHolder.getGameState();
 
-            return this;
+            this.execute();
+            // return this;
         }
 
         abstract void execute();
@@ -203,7 +206,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
     class EvadeBoundary extends MoveBotStrategy {
         void execute(){
-            int distanceToBoundary = (int)getDistanceBetween(stateHolder.getBot(), new Position(0, 0)) - this.gameState.getWorld().getRadius();
+            int distanceToBoundary = (int)getDistanceBetween(stateHolder.getBot(), new Position(0, 0)) - stateHolder.getGameState().getWorld().getRadius();
 
             if(distanceToBoundary > 0){
                 this.desireAmount = 0;
@@ -213,7 +216,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
             distanceToBoundary = clampInt(distanceToBoundary, -100, 0);
 
             this.playerAction.action = PlayerActionEn.FORWARD;
-            this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), this.gameState.getWorld().getCenterPoint());
+            this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), stateHolder.getGameState().getWorld().getCenterPoint());
 
             this.desireAmount = lerpInt(distanceToBoundary/(-100f), 75, 90);
 
@@ -228,13 +231,17 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         if(stateHolder.getBot() == null)
             return;
 
+        moveBotStrategy.forEach((movebot) -> {
+            movebot.Update();
+        });
+
         MoveBotStrategy toExecute = moveBotStrategy
             .stream()
-            .map(movebot -> movebot.Update())
             .sorted(Comparator.comparing(movebot -> movebot.getDesire()))
             .collect(Collectors.toList()).get(moveBotStrategy.size()-1);
 
         playerDebug.TriggerMessage("size" + stateHolder.getBot().getSize());
+        playerDebug.TriggerMessage("ini world >" + stateHolder.getGameState().getWorld().getRadius());
 
         botProcessor.sendMessage(toExecute.getPlayerAction(), toExecute.getDesire());
     }

@@ -40,13 +40,13 @@ public class ShootBot extends ActionCalculator implements ActionBot {
                     .collect(Collectors.toList());
             // System.out.println(list.get(0).getId());
 
-            sUtil.TriggerMessage(list.get(0).getId());
+            // sUtil.TriggerMessage(list.get(0).getId());
 
 
             playerAction.setHeading(getHeadingBetween(stateHolder.getBot(), list.get(0)));
         }
 
-        botProcessor.sendMessage(playerAction, 999);
+        botProcessor.sendMessage(playerAction, 0);
       //  System.out.println("shoot bot is executed.");
     }
 }
