@@ -35,7 +35,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     //TODO : chaseplayer, evadeboundary
 
     private final BotProcessor botProcessor;
-    private final StateHolder stateHolder;
+    private final StateHolder stateHolder; // dont access this directly
     private final PlayerAction playerAction;
 
     List<MoveBotStrategy> moveBotStrategy;
@@ -62,8 +62,8 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
         @Getter(AccessLevel.PUBLIC)
         protected PlayerAction playerAction  = new PlayerAction();
-        // protected GameState gameState = stateHolder.getGameState();
-        protected GameState gameState = new GameState();
+        protected GameState gameState = stateHolder.getGameState();
+        // protected GameState gameState = new GameState();
 
 
 
@@ -80,9 +80,10 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         public void Update(){
             
             this.gameState = stateHolder.getGameState();
+            
+            // getgamestate here works
 
             this.execute();
-            // return this;
         }
 
         abstract void execute();
@@ -112,7 +113,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 
                 this.desireAmount = lerpInt((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold, 70, 85);
 
-                playerDebug.TriggerMessage((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold + " dari " + (float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold) + " / " + this.foodAmoundThreshold);
+                // playerDebug.TriggerMessage((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold + " dari " + (float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold) + " / " + this.foodAmoundThreshold);
                 
             }
 
@@ -206,21 +207,28 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
     class EvadeBoundary extends MoveBotStrategy {
         void execute(){
-            int distanceToBoundary = (int)getDistanceBetween(stateHolder.getBot(), new Position(0, 0)) - stateHolder.getGameState().getWorld().getRadius();
+            if(this.gameState.getWorld().getRadius() == null)
+                return;
 
-            if(distanceToBoundary > 0){
+//
+//  inner (-)  ||| (+) outer
+//
+
+            int distanceOutOfBound = (int)getDistanceBetween(stateHolder.getBot(), new Position()) - this.gameState.getWorld().getRadius();
+
+            if(distanceOutOfBound <= 0){
                 this.desireAmount = 0;
                 return;
             }
 
-            distanceToBoundary = clampInt(distanceToBoundary, -100, 0);
+            distanceOutOfBound = clampInt(distanceOutOfBound, 0, 100);
 
             this.playerAction.action = PlayerActionEn.FORWARD;
-            this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), stateHolder.getGameState().getWorld().getCenterPoint());
+            this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), this.gameState.getWorld().getCenterPoint());
 
-            this.desireAmount = lerpInt(distanceToBoundary/(-100f), 75, 90);
+            this.desireAmount = lerpInt(distanceOutOfBound/(100f), 75, 90);
 
-            playerDebug.TriggerMessage("Keluar dari map, berusaha masuk. Distance from border : " + distanceToBoundary);
+            playerDebug.TriggerMessage("Keluar dari map, berusaha masuk. Distance from border : " + distanceOutOfBound);
         }
     }
     
