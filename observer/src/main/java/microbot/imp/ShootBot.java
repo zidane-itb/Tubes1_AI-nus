@@ -26,7 +26,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
 
     public void run() {
         if (stateHolder.getBot() != null && stateHolder.getBot().getSize() < 15) {
-            botProcessor.sendMessage(playerAction, 0);
+            // botProcessor.sendMessage(playerAction, 0);
             return;
         }
 
@@ -46,8 +46,8 @@ public class ShootBot extends ActionCalculator implements ActionBot {
             playerAction.setHeading(getHeadingBetween(stateHolder.getBot(), list.get(0)));
         }
 
-        botProcessor.sendMessage(playerAction, 0);
-        signalDone(botProcessor);
+        // botProcessor.sendMessage(playerAction, 0);
+        // signalDone(botProcessor);
       //  System.out.println("shoot bot is executed.");
     }
 }

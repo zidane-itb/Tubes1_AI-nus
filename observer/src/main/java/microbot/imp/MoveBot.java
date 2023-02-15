@@ -33,7 +33,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
     TimedDebugLog playerDebug = new TimedDebugLog("MoveBot", 2);
 
-    //TODO : chaseplayer, evadeboundary
+    //TODO : chaseplayer, evadeboundary, avoid dust, avoid torepeda, avoid teleporter
 
     private final BotProcessor botProcessor;
     private final StateHolder stateHolder; // dont access this directly
@@ -93,24 +93,52 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     class FoodChase extends MoveBotStrategy {
         private float thresholdRadius = 100f;
 
-        private final int foodAmoundThreshold = 30;
+        private final float safeGreedOffset = 0.1f;
+
+        private final static int targetTick = 6;
 
         void execute(){
-
             this.playerAction.action = PlayerActionEn.FORWARD;
-            this.playerAction.heading = new Random().nextInt(360);
+            // this.playerAction.heading = new Random().nextInt(360);
 
             if (!this.gameState.getGameObjects().isEmpty()) {
+                int speed = stateHolder.getBot().getSpeed();
+
                 var foodList = this.gameState.getGameObjects()
-                        .stream().filter(item -> item.getGameObjectType() == ObjectTypeEn.FOOD)
+                        .stream()
+                        .filter(item -> item.getGameObjectType() == ObjectTypeEn.FOOD || item.getGameObjectType() == ObjectTypeEn.SUPER_FOOD)
                         .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
                         .collect(Collectors.toList());
 
-                this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), foodList.get(0));
+                float maxGreedValue = 0, tempGreedValue = 0;
+                int nearbyCount = 0;
+                for(GameObject food : foodList){
+                    for(GameObject nearbyFood : foodList){
+                        if(getDistanceBetween(stateHolder.getBot(), food) <= targetTick * speed){
+                            // if(getDistanceBetween(food, nearbyFood) <= stateHolder.getBot().getSize()){
+                            if(getDistanceBetween(food, nearbyFood) <= 100){
+                                if(food.getGameObjectType() == ObjectTypeEn.FOOD)
+                                    nearbyCount += 1;
+                                else // SUPER_FOOD weigths thrice as much
+                                    nearbyCount += 3;
+                            }
+                        }
+                    }
+                    
+                    tempGreedValue = nearbyCount / (float)getDistanceBetween(stateHolder.getBot(), food);
+                    
+                    if(tempGreedValue > maxGreedValue + safeGreedOffset){
+                        maxGreedValue = tempGreedValue;
+                        this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), food);
+                        
+                    }
 
-                // var insideThresholdFood = foodList
-                //         .stream().filter(food -> getDistanceBetween(stateHolder.getBot(), food) < thresholdRadius)
-                //         .collect(Collectors.toList());
+                    nearbyCount = 0;
+                    maxGreedValue = 0;
+                }
+
+                // this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), foodList.get(0));
+
                 int largestNo = 1, count = 1;
                 for(GameObject bot : this.gameState.getPlayerGameObjects()){
                     if (bot.getSize() > stateHolder.getBot().getSize())
@@ -119,7 +147,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     count += 1;
                 }
 
-                this.desireAmount = lerpInt((float)largestNo/count, 4, 5);
+                this.desireAmount = lerpInt((float)largestNo/count, 3, 5);
             }
 
             
@@ -210,6 +238,8 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     }
 
     class EvadeBoundary extends MoveBotStrategy {
+        int safeDistanceOffset = 20;
+
         void execute(){
             if(this.gameState.getWorld().getRadius() == null)
                 return;
@@ -220,17 +250,17 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
             int distanceOutOfBound = (int)getDistanceBetween(stateHolder.getBot(), new Position()) - this.gameState.getWorld().getRadius();
 
-            if(distanceOutOfBound <= 0){
+            if(distanceOutOfBound <= -safeDistanceOffset){ // - means just before (inside bound)
                 this.desireAmount = -1;
                 return;
             }
 
-            distanceOutOfBound = clampInt(distanceOutOfBound, 0, 100);
+            distanceOutOfBound = clampInt(distanceOutOfBound, -safeDistanceOffset, 100);
 
             this.playerAction.action = PlayerActionEn.FORWARD;
             this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), this.gameState.getWorld().getCenterPoint());
 
-            this.desireAmount = lerpInt(distanceOutOfBound/(100f), 2, 4);
+            this.desireAmount = lerpInt(distanceOutOfBound/(100f), 4, 5);
 
             playerDebug.TriggerMessage("Keluar dari map, berusaha masuk. Distance from border : " + distanceOutOfBound);
         }
