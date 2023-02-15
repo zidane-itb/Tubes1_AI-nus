@@ -58,7 +58,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         final int randomOffset = 3;
 
         protected int desireAmount;
-        protected final int defaultDesireAmount = 40;
+        protected final int defaultDesireAmount = 1;
 
         @Getter(AccessLevel.PUBLIC)
         protected PlayerAction playerAction  = new PlayerAction();
@@ -74,7 +74,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         }
 
         public int getDesire(){
-            return clampInt((int)Math.floor(Math.random() * (2 * randomOffset) - randomOffset  + desireAmount), 0, 100);
+            return this.desireAmount;
         }
 
         public void Update(){
@@ -111,10 +111,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                         .stream().filter(food -> getDistanceBetween(stateHolder.getBot(), food) < thresholdRadius)
                         .collect(Collectors.toList());
                 
-                this.desireAmount = lerpInt((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold, 70, 85);
-
-                // playerDebug.TriggerMessage((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold + " dari " + (float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold) + " / " + this.foodAmoundThreshold);
-                
+                this.desireAmount = lerpInt((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold, 3, 4);   
             }
 
             
@@ -146,16 +143,16 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     .collect(Collectors.toList());
                 
                 if(biggerPL.isEmpty()){
-                    this.desireAmount = 0;
+                    this.desireAmount = -1;
 
                     return;
                 }
 
                 if(getDistanceBetween(stateHolder.getBot(), biggerPL.get(0)) > thresholdRadius){
-                    this.desireAmount = 50;
+                    this.desireAmount = 2;
                 } else {
                     // this.desireAmount = lerpInt(1/ clampFloat((float)getDistanceBetween(stateHolder.getBot(), Position.getCentroid(biggerPL)), 1f, thresholdRadius), 70, 78);
-                    this.desireAmount = lerpInt(1/(float)getDistanceBetween(stateHolder.getBot(), biggerPL.get(0)), 60, 85);
+                    this.desireAmount = lerpInt(1/(float)getDistanceBetween(stateHolder.getBot(), biggerPL.get(0)), 2, 4);
                 }
             }
         }
@@ -186,17 +183,16 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     .collect(Collectors.toList());
                 
                 if(smallerPL.isEmpty()){
-                    this.desireAmount = 0;
+                    this.desireAmount = -1;
                     return;
                 }
                     
 
 
                 if(getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)) > thresholdRadius){
-                    this.desireAmount = 50; // let it
+                    this.desireAmount = 2; // let it
                 } else {
-                    // this.desireAmount = lerpInt(1/ clampFloat((float)getDistanceBetween(stateHolder.getBot(), Position.getCentroid(biggerPL)), 1f, thresholdRadius), 70, 78);
-                    this.desireAmount = lerpInt(1/(float)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 60, 85);
+                    this.desireAmount = lerpInt(1/(float)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 2, 4);
 
                     this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), smallerPL.get(0));
                 }
@@ -217,7 +213,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
             int distanceOutOfBound = (int)getDistanceBetween(stateHolder.getBot(), new Position()) - this.gameState.getWorld().getRadius();
 
             if(distanceOutOfBound <= 0){
-                this.desireAmount = 0;
+                this.desireAmount = -1;
                 return;
             }
 
@@ -226,7 +222,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
             this.playerAction.action = PlayerActionEn.FORWARD;
             this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), this.gameState.getWorld().getCenterPoint());
 
-            this.desireAmount = lerpInt(distanceOutOfBound/(100f), 75, 90);
+            this.desireAmount = lerpInt(distanceOutOfBound/(100f), 2, 4);
 
             playerDebug.TriggerMessage("Keluar dari map, berusaha masuk. Distance from border : " + distanceOutOfBound);
         }
@@ -241,16 +237,20 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
         moveBotStrategy.forEach((movebot) -> {
             movebot.Update();
+            botProcessor.sendMessage(movebot.getPlayerAction(), movebot.getDesire());
+            // System.out.println(movebot.getClass().toString() + " -> " + movebot.getDesire());
         });
 
-        MoveBotStrategy toExecute = moveBotStrategy
-            .stream()
-            .sorted(Comparator.comparing(movebot -> movebot.getDesire()))
-            .collect(Collectors.toList()).get(moveBotStrategy.size()-1);
+        // MoveBotStrategy toExecute = moveBotStrategy
+        //     .stream()
+        //     .sorted(Comparator.comparing(movebot -> movebot.getDesire()))
+        //     .collect(Collectors.toList()).get(moveBotStrategy.size()-1);
 
         playerDebug.TriggerMessage("size" + stateHolder.getBot().getSize());
         playerDebug.TriggerMessage("ini world >" + stateHolder.getGameState().getWorld().getRadius());
 
-        botProcessor.sendMessage(toExecute.getPlayerAction(), toExecute.getDesire());
+        // botProcessor.sendMessage(toExecute.getPlayerAction(), toExecute.getDesire());
+
+        signalDone(botProcessor);
     }
 }
