@@ -47,6 +47,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
         }
 
         botProcessor.sendMessage(playerAction, 0);
+        signalDone(botProcessor);
       //  System.out.println("shoot bot is executed.");
     }
 }

@@ -10,6 +10,7 @@ import lombok.AccessLevel;
 
 import microbot.ActionBot;
 import microbot.ActionCalculator;
+import model.engine.GameObject;
 import model.engine.GameState;
 import model.engine.PlayerAction;
 import model.engine.Position;
@@ -107,11 +108,18 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
                 this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), foodList.get(0));
 
-                var insideThresholdFood = foodList
-                        .stream().filter(food -> getDistanceBetween(stateHolder.getBot(), food) < thresholdRadius)
-                        .collect(Collectors.toList());
-                
-                this.desireAmount = lerpInt((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold, 3, 4);   
+                // var insideThresholdFood = foodList
+                //         .stream().filter(food -> getDistanceBetween(stateHolder.getBot(), food) < thresholdRadius)
+                //         .collect(Collectors.toList());
+                int largestNo = 1, count = 1;
+                for(GameObject bot : this.gameState.getPlayerGameObjects()){
+                    if (bot.getSize() > stateHolder.getBot().getSize())
+                        largestNo += 1;
+                    
+                    count += 1;
+                }
+
+                this.desireAmount = lerpInt((float)largestNo/count, 4, 5);
             }
 
             
@@ -126,7 +134,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         void execute(){        
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
                 var playerList = this.gameState.getPlayerGameObjects()
-                    .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId())
+                    .stream().filter(player -> player.getId() != stateHolder.getBot().getId())
                     .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
                     .map(player -> player.getPosition())
                     .collect(Collectors.toList());
@@ -137,7 +145,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 this.playerAction.heading = rotateHeadingBy(getHeadingBetween(stateHolder.getBot(), midPoint), 180);
 
                 var biggerPL = this.gameState.getPlayerGameObjects()
-                    .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId() && player.getSize() - safeSizeThreshold >= stateHolder.getBot().getSize())
+                    .stream().filter(player -> player.getId() != stateHolder.getBot().getId() && player.getSize() - safeSizeThreshold >= stateHolder.getBot().getSize())
                     .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
                     .map(player -> player.getPosition())
                     .collect(Collectors.toList());
@@ -166,7 +174,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         void execute(){       
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
                 var playerList = this.gameState.getPlayerGameObjects()
-                    .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId())
+                    .stream().filter(player -> player.getId() != stateHolder.getBot().getId())
                     .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
                     .map(player -> player.getPosition())
                     .collect(Collectors.toList());
@@ -177,7 +185,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), midPoint);
 
                 var smallerPL = this.gameState.getPlayerGameObjects()
-                    .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId() && player.getSize() + safeSizeThreshold < stateHolder.getBot().getSize())
+                    .stream().filter(player -> player.getId() != stateHolder.getBot().getId() && player.getSize() + safeSizeThreshold < stateHolder.getBot().getSize())
                     .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
                     .map(player -> player.getPosition())
                     .collect(Collectors.toList());
