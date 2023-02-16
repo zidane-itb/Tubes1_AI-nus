@@ -1,7 +1,5 @@
 package microbot;
 
-// import javax.swing.text.Position; why import these? auto imports?
-
 import model.engine.Position;
 import model.engine.GameObject;
 import model.engine.PlayerAction;
