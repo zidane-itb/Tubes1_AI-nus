@@ -2,6 +2,7 @@ package etc;
 
 import com.sun.tools.javac.Main;
 import enums.ObjectTypeEn;
+import microbot.imp.TeleportBot;
 import model.engine.GameObject;
 import model.engine.GameState;
 import model.engine.GameStateDto;
@@ -21,11 +22,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+
+import static java.lang.System.nanoTime;
 
 public class ExecHandler {
 
@@ -43,9 +47,22 @@ public class ExecHandler {
         StateHolder stateHolder = new StateHolder();
         actionBots = new ActionBot[]{
             new MoveBot(botProcessor, stateHolder, new PlayerAction()),
-            new ShootBot(botProcessor, stateHolder, new PlayerAction())
+            new ShootBot(botProcessor, stateHolder, new PlayerAction()),
+            new TeleportBot(botProcessor, stateHolder, new PlayerAction())
         };
         executor = Executors.newFixedThreadPool(actionBots.length);
+
+        System.out.println("warming up the jvm");
+        int[] x = {0};
+        while (x[0] < 10000*actionBots.length) {
+            for (ActionBot actionBot: actionBots) {
+                executor.execute(() -> {
+                    x[0] += 1;
+                    actionBot.run();
+                });
+            }
+        }
+        System.out.println("jvm warmed up. run count: " + x[0]);
         
         String token = System.getenv("Token");
         token = (token != null) ? token : UUID.randomUUID().toString();
@@ -101,27 +118,32 @@ public class ExecHandler {
             System.out.println("mati");
         });
 
-        hubConnection.on("ReceiveGameComplete", () -> {
+        hubConnection.on("ReceiveGameComplete", (tes) -> {
             System.out.println("selesai");
-        });
+            System.out.println(tes);
+        }, String.class);
 
         hubConnection.start().blockingAwait();
 
         Thread.sleep(1000);
         System.out.println("Registering with the runner...");
         hubConnection.send("Register", token, "AI-nus");
+        AtomicReference<Long> startTime = new AtomicReference<>(nanoTime());
 
         //This is a blocking call
         hubConnection.start().subscribe(() -> {
             while (hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
                 if (isAllThreadsIdle()) {
+                   // System.out.println((nanoTime() - startTime.get())/1000000 + " ms");
                     for (ActionBot actionBot: actionBots) {
                         executor.execute(actionBot::run);
                     }
+                    //startTime.set(nanoTime());
                     continue;
                 }
                 if (!botProcessor.isResultExist())
                     continue;
+
                 GameObject bot = stateHolder.getBot();
                 if (bot == null) {
                     continue;
