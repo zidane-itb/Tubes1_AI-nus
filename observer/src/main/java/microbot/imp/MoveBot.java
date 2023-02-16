@@ -118,6 +118,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 int nearbyCount = 0;
 
                 if(foodList.size() < 8){
+                    // System.out.println(foodList.size());
                     this.desireAmount = 3;
                     this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), this.gameState.getWorld().getCenterPoint());
                     return;
@@ -302,6 +303,34 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
             this.desireAmount = lerpInt(distanceOutOfBound/(100f), 4, 5);
 
             playerDebug.TriggerMessage("Keluar dari map, berusaha masuk. Distance from border : " + distanceOutOfBound);
+        }
+    }
+
+    class EvadeGasCloud extends MoveBotStrategy {
+        
+        void execute(){
+            if(this.gameState.getGameObjects() == null)
+                return;
+
+            var gasClouds = this.gameState.getGameObjects()
+                .stream()
+                .filter(cloud -> cloud.getGameObjectType() == ObjectTypeEn.GAS_CLOUD)
+                .sorted(Comparator.comparing(cloud -> getDistanceBetween(stateHolder.getBot(), cloud)))
+                .collect(Collectors.toList());
+            
+
+            boolean inCloud = false;
+
+            this.desireAmount = -1;
+
+            for(GameObject cloud : gasClouds){
+                if(!inCloud && getDistanceBetween(stateHolder.getBot(), cloud) <= cloud.getSize()){
+                    inCloud = true;
+
+                    this.playerAction.heading = rotateHeadingBy(getHeadingBetween(stateHolder.getBot(), cloud), -90 * (int)Math.signum((stateHolder.getBot().getCurrentHeading() - getHeadingBetween(stateHolder.getBot(), cloud)) - 180));
+                    this.desireAmount = 4;
+                }
+            }
         }
     }
     
