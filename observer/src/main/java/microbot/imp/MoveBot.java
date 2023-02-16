@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 
 import etc.StateHolder;
 import etc.DebugUtil.TimedDebugLog;
+import etc.PlayerEffectHandler;
 
 // @RequiredArgsConstructor
 @Getter @Setter
@@ -108,12 +109,20 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
                 var foodList = this.gameState.getGameObjects()
                         .stream()
-                        .filter(item -> (item.getGameObjectType() == ObjectTypeEn.FOOD || item.getGameObjectType() == ObjectTypeEn.SUPER_FOOD))
+                        .filter(item -> (getDistanceBetween(stateHolder.getBot(), item) < targetTick * speed * 2 
+                        && (item.getGameObjectType() == ObjectTypeEn.FOOD || item.getGameObjectType() == ObjectTypeEn.SUPER_FOOD)))
                         .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
                         .collect(Collectors.toList());
 
                 Double maxGreedValue = 0d, tempGreedValue = 0d;
                 int nearbyCount = 0;
+
+                if(foodList.size() < 8){
+                    this.desireAmount = 3;
+                    this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), this.gameState.getWorld().getCenterPoint());
+                    return;
+                }
+
                 for(GameObject food : foodList){
                     if(getDistanceBetween(stateHolder.getBot(), food) <= targetTick * speed){
                         for(GameObject nearbyFood : foodList){
@@ -141,11 +150,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     maxGreedValue = 0d;
                 }
 
-                // this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), foodList.get(0));
-                if(foodList.size() < 10){
-                    this.desireAmount = 3;
-                    return;
-                }
+                // this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), foodList.get(0))
 
                 int largestNo = 1, count = 1;
                 for(GameObject bot : this.gameState.getPlayerGameObjects()){
@@ -158,7 +163,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     count += 1;
                 }
 
-                this.desireAmount = lerpInt((float)largestNo/count, 3, 5);
+                this.desireAmount = lerpInt((float)largestNo/count, 3, 4);
             }
         }
     }
@@ -224,8 +229,8 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
                 var smallerPL = this.gameState.getPlayerGameObjects()
                     .stream().filter(player -> player.getId() != stateHolder.getBot().getId() 
-                        && player.getSize() + safeSizeThreshold < stateHolder.getBot().getSize()
-                        && getDistanceBetween(stateHolder.getBot(), player) < maxThresholdRadius)
+                        && player.getSize() + safeSizeThreshold < stateHolder.getBot().getSize())
+                        // && getDistanceBetween(stateHolder.getBot(), player) < maxThresholdRadius)
                     .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
                     .map(player -> player.getPosition())
                     .collect(Collectors.toList());
@@ -241,6 +246,31 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), smallerPL.get(0));
                 
                 playerDebug.TriggerMessage("chasing -> " + this.desireAmount + ", chasing " + smallerPL.size() + " enemies");
+
+                int largestNo = 1, count = 1;
+                for(GameObject bot : this.gameState.getPlayerGameObjects()){
+                    if(bot.getId() == stateHolder.getBot().getId())
+                        continue;
+
+                    if (bot.getSize() > stateHolder.getBot().getSize())
+                        largestNo += 1;
+                    
+                    count += 1;
+                }
+
+                if(largestNo <= 2 && !PlayerEffectHandler.isAfterburnerActive(stateHolder.getBot().getEffectHashCode())){
+                    this.playerAction.action = PlayerActionEn.STARTAFTERBURNER;
+                    this.desireAmount = 4;
+
+                    System.out.println("activating afterburener!");
+                }
+
+                if((largestNo > 2 || stateHolder.getBot().getSize() < 20) && PlayerEffectHandler.isAfterburnerActive(stateHolder.getBot().getEffectHashCode())){
+                    this.playerAction.action = PlayerActionEn.STOPAFTERBURNER;
+                    this.desireAmount = 5;
+
+                    System.out.println("stopping afterburener!");
+                }
             }
 
         }
