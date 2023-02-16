@@ -50,20 +50,21 @@ public class ShootBot extends ActionCalculator implements ActionBot {
                     (isInRadius(sn, target, target.getSize()) ||
                             !isInRadius(target, world.getCenterPoint(), 0.9 * world.radius))) {
                 playerAction.setAction(PlayerActionEn.DETONATESUPERNOVA);
-                sendMessage(playerAction, 5);
+                botProcessor.sendMessage(playerAction, 5);
                 snFired = false;
             }
+            if (!snFired)
+                return;
         }
         if (bot.isSnAvailable()) {
             supernova(gameState.getPlayerGameObjects());
+            return;
         }
         if (stateHolder.getBot().getSize() < 25) {
-            signalDone(botProcessor);
+            botProcessor.sendMessage(playerAction, -1);
             return;
         }
         torpedoes(gameState.getPlayerGameObjects(), bot);
-
-        signalDone(botProcessor);
     }
 
     private void supernova(List<GameObject> playerObjects) {
@@ -89,7 +90,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
         playerAction.setHeading(getHeadingBetween(stateHolder.getBot(), largestPlayer));
         snFired = true;
 
-        sendMessage(playerAction, 3);
+        botProcessor.sendMessage(playerAction, 3);
     }
 
     private void torpedoes(List<GameObject> playerObjects, GameObject bot) {
@@ -107,14 +108,21 @@ public class ShootBot extends ActionCalculator implements ActionBot {
                 closestPlayer = player; closestDist = temp;
             }
         }
-        if (closestPlayer == null || !(closestDist-closestPlayer.getSize() > 1.5*bot.getSize())) {
+        if (closestPlayer == null
+                || closestDist-closestPlayer.getSize() > torpedoThreshold(bot.getSize())) {
             return;
         }
         playerAction.setAction(PlayerActionEn.FIRETORPEDOES);
         playerAction.setHeading(getHeadingBetween(stateHolder.getBot(), closestPlayer));
 
-        sendMessage(playerAction, 3);
+        botProcessor.sendMessage(playerAction, 3);
     }
 
+    private double torpedoThreshold(double size) {
+        if (size > 70) {
+            return 1.8*size;
+        }
+        return 2*size;
+    }
 
 }
