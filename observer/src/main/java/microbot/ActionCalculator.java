@@ -66,6 +66,19 @@ public class ActionCalculator {
     protected int lerpInt(float value, int a, int b){
         return (int)(clampFloat(value, 0, 1) * (b - a) + a + (0.5f * Math.signum(value)));
     }
+
+
+    protected int slerpInt(float value, int a, int b){
+        return (int)(clampFloat((float)easeOutSine(value), 0, 1) * (b - a) + a + (0.5f * Math.signum(value)));
+    }
+
+    protected double slerp(float value, int a, int b){
+        return easeOutSine(value) * (b - a) + a;
+    }
+
+    protected double easeOutSine(float x){
+        return Math.sin((x * Math.PI) / 2);
+    }
     
     protected boolean isInRadius(GameObject object, GameObject target, double radius) {
 

@@ -48,10 +48,11 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         this.playerAction = playerAction;
 
         this.moveBotStrategy = Stream.of(
-            new FoodChase(),
-            new EnemyEvade(),
-            new EnemyChase(),
-            new EvadeBoundary()
+            new DefaultMove(),
+            new FoodChase()
+            // new EnemyEvade(),
+            // new EnemyChase(),
+            // new EvadeBoundary()
         )
         .collect(Collectors.toList());
     }
@@ -91,6 +92,13 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         abstract void execute();
     }
 
+    class DefaultMove extends MoveBotStrategy {
+        void execute(){
+            this.desireAmount = 2;
+            this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), this.gameState.getWorld().getCenterPoint());
+        }
+    }
+
     class FoodChase extends MoveBotStrategy {
         private float thresholdRadius = 100f;
 
@@ -117,12 +125,12 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 Double maxGreedValue = 0d, tempGreedValue = 0d;
                 int nearbyCount = 0;
 
-                if(foodList.size() < 8){
-                    // System.out.println(foodList.size());
-                    this.desireAmount = 3;
-                    this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), this.gameState.getWorld().getCenterPoint());
-                    return;
-                }
+                // if(foodList.size() < 8){
+                //     // System.out.println(foodList.size());
+                //     this.desireAmount = 3;
+                //     this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), this.gameState.getWorld().getCenterPoint());
+                //     return;
+                // }
 
                 for(GameObject food : foodList){
                     if(getDistanceBetween(stateHolder.getBot(), food) <= targetTick * speed){
@@ -164,7 +172,8 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     count += 1;
                 }
 
-                this.desireAmount = lerpInt((float)largestNo/count, 3, 4);
+                // this.desireAmount = lerpInt((float)largestNo/count, 3, 4);
+                this.desireAmount = slerpInt((float)largestNo/count, 1, 3);
             }
         }
     }
@@ -176,17 +185,6 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
         void execute(){        
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
-                // var playerList = this.gameState.getPlayerGameObjects()
-                //     .stream().filter(player -> player.getId() != stateHolder.getBot().getId())
-                //     .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
-                //     .map(player -> player.getPosition())
-                //     .collect(Collectors.toList());
-                
-                // Position midPoint = Position.getCentroid(playerList);
-
-                // this.playerAction.action = PlayerActionEn.FORWARD;
-                // this.playerAction.heading = rotateHeadingBy(getHeadingBetween(stateHolder.getBot(), midPoint), 180);
-
                 var biggerPL = this.gameState.getPlayerGameObjects()
                     .stream().filter(player -> player.getId() != stateHolder.getBot().getId() // not player
                         && player.getSize() - safeSizeThreshold >= stateHolder.getBot().getSize()  // bigger
@@ -202,7 +200,8 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 }
                 
                 this.playerAction.heading = rotateHeadingBy(getHeadingBetween(stateHolder.getBot(), Position.getCentroid(biggerPL)), 180);
-                this.desireAmount = lerpInt(minThresholdRadius / clampInt((int)getDistanceBetween(stateHolder.getBot(), biggerPL.get(0)), minThresholdRadius, maxThresholdRadius), 2, 5);
+                // this.desireAmount = lerpInt(minThresholdRadius / clampInt((int)getDistanceBetween(stateHolder.getBot(), biggerPL.get(0)), minThresholdRadius, maxThresholdRadius), 2, 5);
+                this.desireAmount = slerpInt(minThresholdRadius / clampInt((int)getDistanceBetween(stateHolder.getBot(), biggerPL.get(0)), minThresholdRadius, maxThresholdRadius), 2, 5);
                 playerDebug.TriggerMessage("evading -> " + this.desireAmount + ", evading " + biggerPL.size() + " enemies");
             }
         }
@@ -213,18 +212,10 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
         private int safeSizeThreshold = 10;
 
-        private int minThresholdRadius = 50, maxThresholdRadius = 300;
+        private int minThresholdRadius = 200, maxThresholdRadius = 500;
 
         void execute(){       
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
-                // var playerList = this.gameState.getPlayerGameObjects()
-                //     .stream().filter(player -> player.getId() != stateHolder.getBot().getId())
-                //     .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
-                //     .map(player -> player.getPosition())
-                //     .collect(Collectors.toList());
-                
-                // Position midPoint = Position.getCentroid(playerList);
-
                 this.playerAction.action = PlayerActionEn.FORWARD;
                 this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), new Position());
 
@@ -242,7 +233,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 }
                     
 
-                this.desireAmount = minThresholdRadius / lerpInt(clampInt((int)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), minThresholdRadius, maxThresholdRadius), 2, 4);
+                this.desireAmount =  slerpInt(minThresholdRadius / clampInt((int)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), minThresholdRadius, maxThresholdRadius), 2, 4);
 
                 this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), smallerPL.get(0));
                 
@@ -266,7 +257,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     System.out.println("activating afterburener!");
                 }
 
-                if((largestNo > 2 || stateHolder.getBot().getSize() < 20) && PlayerEffectHandler.isAfterburnerActive(stateHolder.getBot().getEffectHashCode())){
+                if((largestNo > 2 || stateHolder.getBot().getSize() < 60) && PlayerEffectHandler.isAfterburnerActive(stateHolder.getBot().getEffectHashCode())){
                     this.playerAction.action = PlayerActionEn.STOPAFTERBURNER;
                     this.desireAmount = 5;
 
@@ -300,7 +291,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
             this.playerAction.action = PlayerActionEn.FORWARD;
             this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), this.gameState.getWorld().getCenterPoint());
 
-            this.desireAmount = lerpInt(distanceOutOfBound/(100f), 4, 5);
+            this.desireAmount = slerpInt(distanceOutOfBound/(100f), 2, 4);
 
             playerDebug.TriggerMessage("Keluar dari map, berusaha masuk. Distance from border : " + distanceOutOfBound);
         }
@@ -346,11 +337,6 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
             botProcessor.sendMessage(movebot.getPlayerAction(), movebot.getDesire());
             // System.out.println(movebot.getClass().toString() + " -> " + movebot.getDesire());
         });
-
-        // MoveBotStrategy toExecute = moveBotStrategy
-        //     .stream()
-        //     .sorted(Comparator.comparing(movebot -> movebot.getDesire()))
-        //     .collect(Collectors.toList()).get(moveBotStrategy.size()-1);
 
         playerDebug.TriggerMessage("size" + stateHolder.getBot().getSize());
         playerDebug.TriggerMessage("ini world >" + stateHolder.getGameState().getWorld().getRadius());
