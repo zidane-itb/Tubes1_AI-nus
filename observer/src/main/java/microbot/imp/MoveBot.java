@@ -21,7 +21,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.Random;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -94,7 +93,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                         .stream().filter(food -> getDistanceBetween(stateHolder.getBot(), food) < thresholdRadius)
                         .collect(Collectors.toList());
                 
-                this.desireAmount = lerpInt(easeInOut((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold), 2, 5);
+                this.desireAmount = lerpInt(easeInOut((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold), 2, 4);
 
                 if(currentWaitTime <= 0){
                     System.out.println((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold + " dari " + (float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold) + " / " + this.foodAmoundThreshold);
@@ -107,19 +106,20 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     }
 
     class EnemyEvade extends MoveBotStrategy {
-        private int safeSizeThreshold = 20;
+        private int safeSizeThreshold = 30;
 
         void execute(){        
             // Position midPoint = new Position();
 
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
                 var playerList = this.gameState.getPlayerGameObjects()
-                    .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER 
+                    .stream().filter(player -> (player.getGameObjectType() == ObjectTypeEn.PLAYER 
                     && player.getId() != stateHolder.getBot().getId() 
-                    && player.getSize() - safeSizeThreshold >= stateHolder.getBot().getSize()
+                    && player.getSize() - safeSizeThreshold > stateHolder.getBot().getSize()
                     && getDistanceBetween(stateHolder.getBot(), player) - player.getSize() < 500)
-                    .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player) - player.getSize()))
-                    // .map(player -> player.getPosition())
+                    || 
+                    (player.getGameObjectType() == ObjectTypeEn.GAS_CLOUD
+                    && getDistanceBetween(stateHolder.getBot(), player) - player.getSize() < 200))
                     .collect(Collectors.toList());
                 
                 if(playerList.isEmpty()){
@@ -140,8 +140,6 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     }
 
     class EnemyChase extends MoveBotStrategy {
-        private float thresholdRadius = 150f;
-
         private int safeSizeThreshold = 10;
 
         void execute(){        
@@ -185,9 +183,6 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
             botProcessor.sendMessage(new PlayerAction(), -1);
             return;
         }
-
-        if(stateHolder.getBot().getSize() < 5)
-            System.out.println("harusnya mati!");
 
         FoodChase foodChase = new FoodChase();
         EnemyEvade enemyEvade = new EnemyEvade();
