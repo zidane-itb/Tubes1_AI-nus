@@ -143,13 +143,19 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
                 var playerList = this.gameState.getPlayerGameObjects()
-                    .stream().filter(player -> (player.getGameObjectType() == ObjectTypeEn.PLAYER 
-                    && player.getId() != stateHolder.getBot().getId() 
-                    && player.getSize() - safeSizeThreshold > stateHolder.getBot().getSize()
-                    && getDistanceBetween(stateHolder.getBot(), player) - player.getSize() < 500)
+                    .stream().filter(item -> (item.getGameObjectType() == ObjectTypeEn.PLAYER 
+                    && item.getId() != stateHolder.getBot().getId() 
+                    && item.getSize() - safeSizeThreshold > stateHolder.getBot().getSize()
+                    && getDistanceBetween(stateHolder.getBot(), item) - item.getSize() < 500)
                     || 
-                    (player.getGameObjectType() == ObjectTypeEn.GAS_CLOUD
-                    && getDistanceBetween(stateHolder.getBot(), player) - player.getSize() < 200))
+                    (item.getGameObjectType() == ObjectTypeEn.GAS_CLOUD
+                    && getDistanceBetween(stateHolder.getBot(), item) - item.getSize() < 200)
+                    ||
+                    (item.getGameObjectType() == ObjectTypeEn.ASTEROID_FIELD
+                    && getDistanceBetween(stateHolder.getBot(), item) - item.getSize() < 100)
+                    ||
+                    (item.getGameObjectType() == ObjectTypeEn.WORMHOLE
+                    && getDistanceBetween(stateHolder.getBot(), item) - item.getSize() - stateHolder.getBot().getSize() < 10))
                     .collect(Collectors.toList());
                 
                 if(playerList.isEmpty()){
@@ -166,6 +172,33 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 
             }
 
+        }
+    }
+
+    class TorpedoEvade extends MoveBotStrategy{
+        void execute(){
+            if(!this.gameState.getPlayerGameObjects().isEmpty()){
+                var torpedoList = this.gameState.getPlayerGameObjects()
+                    .stream().filter(item -> (item.getGameObjectType() == ObjectTypeEn.TORPEDO_SALVO
+                    && getDistanceBetween(stateHolder.getBot(), item) - item.getSize() < 400))
+                    .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
+                    .collect(Collectors.toList());
+                
+                if(torpedoList.isEmpty()){
+                    this.desireAmount = -1;
+                    return;
+                }
+    
+                this.playerAction.action = PlayerActionEn.FORWARD;
+                this.playerAction.heading = getHeadingDifference(stateHolder.getBot().getCurrentHeading(), rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), 90)) < 180 
+                                            ? 
+                                            rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), 90) 
+                                            : 
+                                            rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), -90);
+    
+                this.desireAmount = lerpInt(easeInOut(1/getDistanceBetween(stateHolder.getBot(), torpedoList.get(0))), 2, 4);
+                
+            }
         }
     }
 

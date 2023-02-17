@@ -40,6 +40,12 @@ public class ActionCalculator {
         return (direction + 360) % 360;
     }
 
+    /***
+     * 
+     * @param heading heading
+     * @param rotateAmount amount rotate clockwise
+     * @return
+     */
     protected int rotateHeadingBy(int heading, int rotateAmount){
         heading += rotateAmount;
 
@@ -47,6 +53,10 @@ public class ActionCalculator {
         heading = heading >= 360 ? heading - 360 : heading;
 
         return heading;
+    }
+
+    protected int getHeadingDifference(int a, int b){
+        return (a - b + 360) % 360;
     }
 
     protected int toDegrees(double v) {
