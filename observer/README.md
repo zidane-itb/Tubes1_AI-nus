@@ -4,7 +4,9 @@ Bot AI-nus dibuat untuk memainkan permainan [Entelect Galaxio](https://github.co
 Dalam pembuatannya, program ini memanfaatkan konsep algoritma *greedy* yang diajarkan melalui Kelas IF2211 Strategi Algoritma.
 
 ## Algoritma Greedy
-Algoritma greedy yang digunakan dalam pembuatan program ini adalah aplikasi dasar solusi permasalahan `activity selection problem` dan `job scheduling problem`. Selain itu, program ini juga mengaplikasikan konsep `greedy by density` yang terbukti mangkus dalam mengatasi permasalahan yang disediakan dalam spesifikasi.
+Pada program ini banyak diterapkan konsep *`greedy by density`* dengan density sebagai perbandingan nilai-nilai tertentu yang dimiliki masing-masing kandidat aktivitas yang akan dijalankan. Konsep ini dipilih karena dapat lebih mudah diterapkan dan disesuaikan dengan setiap aksi player yang disediakan oleh permainan.
+
+Sebagai contoh dalam aktivitas pencarian `makanan` dan `supernova_pickup`, digunakan nilai perbandingan **banyak makanan lain di sekitar sebuah makanan target** dibagi dengan **jarak yang harus ditempuh untuk mencapai target**. Semakin dekat dan semakin ramainya lingkungan sebuah calon target maka nilai density akan semakin besar sehingga akan terpilih melalui algoritma greedy.
 
 ## Requirement Program 
 Requirement dasar :
