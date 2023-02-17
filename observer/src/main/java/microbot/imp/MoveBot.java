@@ -180,7 +180,10 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
                 var torpedoList = this.gameState.getPlayerGameObjects()
                     .stream().filter(item -> (item.getGameObjectType() == ObjectTypeEn.TORPEDO_SALVO
-                    && getDistanceBetween(stateHolder.getBot(), item) - item.getSize() < 400))
+                    && getDistanceBetween(stateHolder.getBot(), item) - item.getSize() < 400)
+                    ||
+                    (item.getGameObjectType() == ObjectTypeEn.TELEPORTER
+                    && getDistanceBetween(stateHolder.getBot(), item) - 2 * stateHolder.getBot().getSize() < 200))
                     .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
                     .collect(Collectors.toList());
                 
@@ -190,11 +193,19 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 }   
     
                 this.playerAction.action = PlayerActionEn.FORWARD;
-                this.playerAction.heading = getHeadingDifference(stateHolder.getBot().getCurrentHeading(), rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), 90)) < 180 
-                                            ? 
-                                            rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), 90) 
-                                            : 
-                                            rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), -90);
+                this.playerAction.heading = torpedoList.get(0).getGameObjectType() == ObjectTypeEn.TORPEDO_SALVO ?
+                                                                    (
+                                                                        getHeadingDifference(stateHolder.getBot().getCurrentHeading(), rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), 90)) < 180 
+                                                                        ? 
+                                                                        rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), 90) 
+                                                                        : 
+                                                                        rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), -90)
+                                                                    )                   
+                                                                        :
+                                                                        // TELEPORTER
+                                                                    (
+                                                                        rotateHeadingBy(getHeadingBetween(stateHolder.getBot(), torpedoList.get(0)), 180)
+                                                                    );
     
                 this.desireAmount = lerpInt(easeInOut(100/clampDouble(getDistanceBetween(stateHolder.getBot(), torpedoList.get(0)), 100, 400)), 2, 4);
                 
