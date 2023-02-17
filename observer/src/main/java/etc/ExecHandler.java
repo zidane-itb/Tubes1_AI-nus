@@ -2,6 +2,7 @@ package etc;
 
 import com.sun.tools.javac.Main;
 import enums.ObjectTypeEn;
+import enums.PlayerActionEn;
 import microbot.imp.TeleportBot;
 import model.engine.GameObject;
 import model.engine.GameState;
@@ -22,14 +23,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
-
-import static java.lang.System.nanoTime;
 
 public class ExecHandler {
 
@@ -40,30 +38,36 @@ public class ExecHandler {
         return ((ThreadPoolExecutor) executor).getActiveCount() == 0;
     }
 
+    private static void warmupJvm() {
+            System.out.println("warming up the jvm");
+            int[] x = {0};
+            while (x[0] < 10000*actionBots.length) {
+                for (ActionBot actionBot: actionBots) {
+                        executor.execute(() -> {
+                            x[0] += 1;
+                            try {
+                                actionBot.run();
+                            } catch (NullPointerException e) {}
+                        });
+                }
+            }
+            System.out.println("jvm warmed up. run count: " + x[0]);
+
+    }
+
     public static void start() throws InterruptedException {
         Logger logger = LoggerFactory.getLogger(Main.class);
-
         BotProcessor botProcessor = new BotProcessor();
         StateHolder stateHolder = new StateHolder();
+        TeleportBot teleportBot = new TeleportBot(botProcessor, stateHolder, new PlayerAction());
         actionBots = new ActionBot[]{
             new MoveBot(botProcessor, stateHolder, new PlayerAction()),
             new ShootBot(botProcessor, stateHolder, new PlayerAction()),
-            new TeleportBot(botProcessor, stateHolder, new PlayerAction())
+            teleportBot
         };
         executor = Executors.newFixedThreadPool(actionBots.length);
+        warmupJvm();
 
-        System.out.println("warming up the jvm");
-        int[] x = {0};
-        while (x[0] < 10000*actionBots.length) {
-            for (ActionBot actionBot: actionBots) {
-                executor.execute(() -> {
-                    x[0] += 1;
-                    actionBot.run();
-                });
-            }
-        }
-        System.out.println("jvm warmed up. run count: " + x[0]);
-        
         String token = System.getenv("Token");
         token = (token != null) ? token : UUID.randomUUID().toString();
 
@@ -118,9 +122,9 @@ public class ExecHandler {
             System.out.println("mati");
         });
 
-        hubConnection.on("ReceiveGameComplete", (tes) -> {
+        hubConnection.on("ReceiveGameComplete", (finalState) -> {
             System.out.println("selesai");
-            System.out.println(tes);
+            System.out.println(finalState);
         }, String.class);
 
         hubConnection.start().blockingAwait();
@@ -128,22 +132,18 @@ public class ExecHandler {
         Thread.sleep(1000);
         System.out.println("Registering with the runner...");
         hubConnection.send("Register", token, "AI-nus");
-        AtomicReference<Long> startTime = new AtomicReference<>(nanoTime());
 
         //This is a blocking call
         hubConnection.start().subscribe(() -> {
             while (hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
-                if (isAllThreadsIdle()) {
-                   // System.out.println((nanoTime() - startTime.get())/1000000 + " ms");
+                if (isAllThreadsIdle()&&!botProcessor.isResultExist()) {
                     for (ActionBot actionBot: actionBots) {
                         executor.execute(actionBot::run);
                     }
-                    //startTime.set(nanoTime());
                     continue;
                 }
                 if (!botProcessor.isResultExist())
                     continue;
-
                 GameObject bot = stateHolder.getBot();
                 if (bot == null) {
                     continue;
@@ -152,6 +152,13 @@ public class ExecHandler {
                 playerAction.setPlayerId(bot.getId());
                 if (hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
                     hubConnection.send("SendPlayerAction", playerAction);
+                    if (playerAction.getAction() ==PlayerActionEn.FIRETELEPORT) {
+                        teleportBot.setShot(true);
+                    }
+                    if (playerAction.getAction()==PlayerActionEn.TELEPORT) {
+                        System.out.println("tele " + bot.getTeleportCount()+ " tick: " + stateHolder.getGameState().getWorld().getCurrentTick());
+                        teleportBot.setShot(false);
+                    }
                     if (!isAllThreadsIdle())
                         continue;
                 }
