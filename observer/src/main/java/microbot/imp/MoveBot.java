@@ -86,7 +86,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                         .stream().filter(item -> item.getGameObjectType() == ObjectTypeEn.FOOD 
                         || item.getGameObjectType() == ObjectTypeEn.SUPER_FOOD
                         || item.getGameObjectType() == ObjectTypeEn.SUPERNOVA_PICKUP)
-                        .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
+                        // .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
                         .collect(Collectors.toList());
 
                 int valueNearby = 0;
@@ -187,7 +187,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 if(torpedoList.isEmpty()){
                     this.desireAmount = -1;
                     return;
-                }
+                }   
     
                 this.playerAction.action = PlayerActionEn.FORWARD;
                 this.playerAction.heading = getHeadingDifference(stateHolder.getBot().getCurrentHeading(), rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), 90)) < 180 
@@ -196,7 +196,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                                             : 
                                             rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), -90);
     
-                this.desireAmount = lerpInt(easeInOut(1/getDistanceBetween(stateHolder.getBot(), torpedoList.get(0))), 2, 4);
+                this.desireAmount = lerpInt(easeInOut(100/clampDouble(getDistanceBetween(stateHolder.getBot(), torpedoList.get(0)), 100, 400)), 2, 4);
                 
             }
         }
@@ -204,35 +204,27 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
     class EnemyChase extends MoveBotStrategy {
         private int safeSizeThreshold = 10;
+        private int safeMinimumSizeThreshold = 25;
 
         void execute(){        
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
-                var playerList = this.gameState.getPlayerGameObjects()
-                    .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId())
-                    .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
-                    // .map(player -> player.getPosition())
-                    .collect(Collectors.toList());
+
                 
-                Position midPoint = Position.getCentroid(playerList);
-
-                this.playerAction.action = PlayerActionEn.FORWARD;
-                this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), midPoint);
-
                 var smallerPL = this.gameState.getPlayerGameObjects()
                     .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId() && player.getSize() + safeSizeThreshold < stateHolder.getBot().getSize())
                     .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
                     .map(player -> player.getPosition())
                     .collect(Collectors.toList());
                 
-                if(smallerPL.isEmpty()){
+                if(smallerPL.isEmpty() || stateHolder.getBot().getSize() <= safeMinimumSizeThreshold){
                     this.desireAmount = -1;
                     return;
                 }
-                    
-
-                this.desireAmount = lerpInt(easeOut(200/clampFloat((float)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 200f, 600f)), 2, 4);
-
+                
+                this.playerAction.action = PlayerActionEn.FORWARD;
                 this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), smallerPL.get(0));
+                this.desireAmount = lerpInt(easeOut(200/clampDouble(getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 200, 600)), 2, 4);
+                
                 
             }
 
@@ -247,15 +239,19 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
             return;
         }
 
-        FoodChase foodChase = new FoodChase();
-        EnemyEvade enemyEvade = new EnemyEvade();
-        EnemyChase enemyChase = new EnemyChase();
+        // FoodChase foodChase = new FoodChase();
+        // EnemyEvade enemyEvade = new EnemyEvade();
+        // EnemyChase enemyChase = new EnemyChase();
         
         
         currentWaitTime -= Duration.between(lastCheckTime, Instant.now()).toNanos();
         lastCheckTime = Instant.now();
 
-        List<MoveBotStrategy> toCalculate = Stream.of(foodChase, enemyEvade, enemyChase).collect(Collectors.toList());
+        List<MoveBotStrategy> toCalculate = Stream.of(new FoodChase(), 
+                                                    new EnemyEvade(), 
+                                                    new EnemyChase(), 
+                                                    new TorpedoEvade())
+                                            .collect(Collectors.toList());
         
 
         MoveBotStrategy toExecute = toCalculate
