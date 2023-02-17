@@ -67,8 +67,46 @@ public class ActionCalculator {
         return value;
     }
 
+    protected double clampDouble(double value, double min, double max){
+        value = value > max ? max : value;
+        value = value < min ? min : value;
+
+        return value;
+    }
+
+    /***
+     * 
+     * @param value nilai dari 0 ke 1
+     * @return map nilai easeIn 0 < y < 1
+     */
+    protected double easeIn(double value){
+        return 1 - Math.cos((value * Math.PI) / 2);
+    }
+
+    /***
+     * 
+     * @param value nilai dari 0 ke 1
+     * @return map nilai easeOut 0 < y < 1
+     */
+    protected double easeOut(double value){
+        return Math.sin((value * Math.PI) / 2);
+    }
+
+    /***
+     * 
+     * @param value nilai dari 0 ke 1
+     * @return map nilai easeInOut 0 < y < 1
+     */
+    protected double easeInOut(double value){
+        return -(Math.cos(Math.PI * value) - 1) / 2;
+    }
+
     protected int lerpInt(float value, int a, int b){
         return (int)(clampFloat(value, 0, 1) * (b - a) + a);
+    }
+
+    protected int lerpInt(double value, int a, int b){
+        return (int)(clampDouble(value, 0, 1) * (b - a) + a);
     }
     
     protected boolean isInRadius(GameObject object, GameObject target, double radius) {

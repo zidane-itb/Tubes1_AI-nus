@@ -3,7 +3,7 @@ package microbot.imp;
 import enums.ObjectTypeEn;
 import enums.PlayerActionEn;
 import etc.StateHolder;
-import etc.DebugUtil.CollapsingDebugLog;
+
 import lombok.RequiredArgsConstructor;
 import microbot.ActionBot;
 import microbot.ActionCalculator;
@@ -91,7 +91,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
         playerAction.setHeading(getHeadingBetween(stateHolder.getBot(), largestPlayer));
         snFired = true;
 
-        botProcessor.sendMessage(playerAction, 3);
+        botProcessor.sendMessage(playerAction, 4);
     }
 
     private void torpedoes(List<GameObject> playerObjects, GameObject bot) {
@@ -101,7 +101,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
         GameObject closestPlayer = null;
         double closestDist = -1, temp;
         for (GameObject player: playerObjects) {
-            temp = getDistanceBetween(bot, player);
+            temp = getDistanceBetween(bot, player) - bot.getSize();
             if (closestPlayer == null || temp < closestDist) {
                 if (player.getId() == bot.getId()) {
                     continue;
@@ -116,7 +116,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
         playerAction.setAction(PlayerActionEn.FIRETORPEDOES);
         playerAction.setHeading(getHeadingBetween(stateHolder.getBot(), closestPlayer));
 
-        botProcessor.sendMessage(playerAction, 3);
+        botProcessor.sendMessage(playerAction, lerpInt(easeIn(100 / clampDouble(getDistanceBetween(stateHolder.getBot(), closestPlayer) - closestPlayer.getSize(), 100, 500)), 2, 4));
     }
 
     private double torpedoThreshold(double size) {

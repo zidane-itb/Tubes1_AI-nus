@@ -17,11 +17,39 @@ public class Position {
     this.y = y;
   }
 
+  // /***
+  //  * get centroid of list of positions
+  //  * @param listOfPos 
+  //  */
+  // public static Position getCentroid(List<Position> listOfPos){
+  //   Position centroid = new Position();
+
+  //   // need a better way to handle this
+  //   if(listOfPos.isEmpty())
+  //     return centroid;
+
+  //   listOfPos
+  //     .stream()
+  //     .forEach((myPos) -> {
+  //         centroid.moveXY(myPos.getX(), myPos.getY());
+  //         // System.out.println(centroid.x + ", " + centroid.y);
+  //       });
+    
+  //       // System.out.println("veear " + centroid.x + ", " + centroid.y);
+  //   // centroid.multiplyBy(1f/listOfPos.size());
+  //       centroid.setX(centroid.x/listOfPos.size());
+  //       centroid.setY(centroid.y/listOfPos.size());
+
+        
+
+  //   return centroid;
+  // }
+
   /***
    * get centroid of list of positions
    * @param listOfPos 
    */
-  public static Position getCentroid(List<Position> listOfPos){
+  public static Position getCentroid(List<GameObject> listOfPos){
     Position centroid = new Position();
 
     // need a better way to handle this
@@ -31,7 +59,7 @@ public class Position {
     listOfPos
       .stream()
       .forEach((myPos) -> {
-          centroid.moveXY(myPos.getX(), myPos.getY());
+          centroid.moveXY(myPos.getPosition().getX(), myPos.getPosition().getY());
           // System.out.println(centroid.x + ", " + centroid.y);
         });
     
