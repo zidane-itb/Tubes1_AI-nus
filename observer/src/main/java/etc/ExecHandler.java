@@ -12,6 +12,7 @@ import processor.BotProcessor;
 import microbot.ActionBot;
 import microbot.imp.MoveBot;
 import microbot.imp.ShootBot;
+import microbot.imp.ShieldBot;
 import com.microsoft.signalr.HubConnection;
 import com.microsoft.signalr.HubConnectionBuilder;
 import com.microsoft.signalr.HubConnectionState;
@@ -48,7 +49,8 @@ public class ExecHandler {
         actionBots = new ActionBot[]{
             new MoveBot(botProcessor, stateHolder, new PlayerAction()),
             new ShootBot(botProcessor, stateHolder, new PlayerAction()),
-            new TeleportBot(botProcessor, stateHolder, new PlayerAction())
+            new TeleportBot(botProcessor, stateHolder, new PlayerAction()),
+            new ShieldBot(botProcessor, stateHolder, new PlayerAction())
         };
         executor = Executors.newFixedThreadPool(actionBots.length);
 
