@@ -10,6 +10,8 @@ import java.util.*;
 @Getter @Setter
 public class BotProcessor {
 
+    private static HashMap<Integer, Map<PlayerActionEn, Integer>> prioMap = new HashMap<>();
+
     private PlayerAction playerAction;
     private boolean resultExist;
     private final List<PlayerAction> playerActions;
@@ -29,26 +31,31 @@ public class BotProcessor {
     }
 
     public void computeAction() {
-        highestPrio = 0;
-        if (playerActions.isEmpty())
+        if (playerActions.isEmpty()||highestPrio==-1)
             return;
+        highestPrio = 0;
         if (playerActions.size() == 1) {
             this.playerAction = playerActions.get(0);
             resultExist = true;
             playerActions.clear();
             return;
         }
-        resultExist = true;
-        boolean found = false;
-        for (PlayerAction playerAction1: playerActions) {
-            if (playerAction1.getAction()== PlayerActionEn.TELEPORT) {
-                this.playerAction = playerAction1;
-                found=true;
-                break;
+        Map<PlayerActionEn, Integer> prMap = prioMap.get(highestPrio);
+        // just in case
+        if (prMap==null) {
+            this.playerAction=playerActions.get(0);
+            resultExist = true;
+            return;
+        }
+        int pr = 0;
+        PlayerAction finalAction = null;
+        for (PlayerAction action: playerActions) {
+            if (prMap.getOrDefault(action.getAction(), 1)>pr) {
+                finalAction = action;
             }
         }
-        if (!found)
-            this.playerAction = playerActions.get(0);
+        this.playerAction=finalAction;
+        resultExist = true;
         playerActions.clear();
     }
 
@@ -61,10 +68,29 @@ public class BotProcessor {
         } else if (priority == highestPrio) {
             playerActions.add(playerAction);
         }
-        if (msgCount == 2) {
+        if (msgCount == 4) {
             computeAction();
             msgCount = 0;
         }
+    }
+
+    static {
+        Map<PlayerActionEn, Integer> threeMap = new HashMap<>();
+        threeMap.put(PlayerActionEn.FORWARD, 1);
+        threeMap.put(PlayerActionEn.FIRETORPEDOES, 2);
+        threeMap.put(PlayerActionEn.ACTIVATESHIELD, 3);
+        Map<PlayerActionEn, Integer> fourMap = new HashMap<>();
+        fourMap.put(PlayerActionEn.FIRESUPERNOVA, 1);
+        fourMap.put(PlayerActionEn.FIRETELEPORT, 2);
+        fourMap.put(PlayerActionEn.FORWARD, 3);
+        Map<PlayerActionEn, Integer> fiveMap = new HashMap<>();
+        fiveMap.put(PlayerActionEn.FORWARD, 1);
+        fiveMap.put(PlayerActionEn.TELEPORT, 2);
+        fiveMap.put(PlayerActionEn.DETONATESUPERNOVA, 3);
+
+        prioMap.put(3, threeMap);
+        prioMap.put(4, fourMap);
+        prioMap.put(5, fiveMap);
     }
 
 }

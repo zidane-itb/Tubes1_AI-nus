@@ -61,7 +61,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
             supernova(gameState.getPlayerGameObjects());
             return;
         }
-        if (stateHolder.getBot().getSize() < 25) {
+        if (stateHolder.getBot().getSize() < 40) {
             botProcessor.sendMessage(playerAction, -1);
             return;
         }
@@ -69,7 +69,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
     }
 
     private void supernova(List<GameObject> playerObjects) {
-        if (playerObjects != null && playerObjects.isEmpty())
+        if (playerObjects == null || playerObjects.isEmpty())
             return;
 
         GameObject largestPlayer = null;
@@ -95,7 +95,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
     }
 
     private void torpedoes(List<GameObject> playerObjects, GameObject bot) {
-        if (playerObjects != null && playerObjects.isEmpty())
+        if (playerObjects == null || playerObjects.isEmpty())
             return;
 
         GameObject closestPlayer = null;
