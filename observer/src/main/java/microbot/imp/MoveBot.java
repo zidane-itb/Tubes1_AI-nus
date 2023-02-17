@@ -25,41 +25,24 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import etc.StateHolder;
-import etc.DebugUtil.TimedDebugLog;
-import etc.PlayerEffectHandler;
 
 @RequiredArgsConstructor
 @Getter @Setter
 public class MoveBot  extends ActionCalculator implements ActionBot {
 
-    long currentWaitTime = 0;
-    long defaultWaitTime = 2 * 1_000_000_000;
-    Duration deltaTime = Duration.ZERO;
-    Instant lastCheckTime = Instant.now();
-
     private final BotProcessor botProcessor;
     private final StateHolder stateHolder;
-    private final PlayerAction globalPlayerAction; // ngikutin constructor lombok
+    private final PlayerAction globalPlayerAction;
 
     abstract class MoveBotStrategy{
-        final int randomOffset = 3;
-
         protected int desireAmount;
 
         @Getter(AccessLevel.PUBLIC)
         protected PlayerAction playerAction  = new PlayerAction();
         protected GameState gameState = stateHolder.getGameState();
 
-
-
         public MoveBotStrategy(){
             this.desireAmount = -1;
-
-            execute();
-        }
-
-        public MoveBotStrategy(int defaultDesire){
-            this.desireAmount = defaultDesire;
 
             execute();
         }
@@ -71,9 +54,8 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         abstract void execute();
     }
 
+    /* Meng-handle pergerakan mencari food, super food, dan supernova */
     class FoodChase extends MoveBotStrategy {
-        // private float thresholdRadius = 200f;
-
         private final int foodAmoundThreshold = 40;
 
         void execute(){
@@ -86,12 +68,10 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                         .stream().filter(item -> item.getGameObjectType() == ObjectTypeEn.FOOD 
                         || item.getGameObjectType() == ObjectTypeEn.SUPER_FOOD
                         || item.getGameObjectType() == ObjectTypeEn.SUPERNOVA_PICKUP)
-                        .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
                         .collect(Collectors.toList());
 
                 int valueNearby = 0;
                 double tempGreedyVal, maxGreedyVal = 0;
-                // GameObject target;
 
                 for(GameObject item : foodList){
                     for(GameObject nearbyItem : this.gameState.getGameObjects()){
@@ -116,25 +96,13 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
                     valueNearby = 0;
                     tempGreedyVal = 0;
-                }
-
-
-                // this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), foodList.get(0));
-
-                // var insideThresholdFood = foodList
-                //         .stream().filter(food -> getDistanceBetween(stateHolder.getBot(), food) < thresholdRadius)
-                //         .collect(Collectors.toList());
-                
-                // this.desireAmount = lerpInt(easeInOut((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold), 2, 4);
-
-                
-                
-            }
-
-            
+                }   
+            }            
         }
     }
 
+    /* Meng-handle pergerakan menghindari musuh yang lebih besar, gas_cloud, asteroid_field, dan wormhole */
+    /* wormhole dihindari karena output yang sangat random dan berbahaya bagi pemain */
     class EnemyEvade extends MoveBotStrategy {
         private int safeSizeThreshold = 30;
 
@@ -175,98 +143,92 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         }
     }
 
+    /* Meng-handle pergerakan menghindari torpedo salvo dan teleporter musuh */
     class TorpedoEvade extends MoveBotStrategy{
         void execute(){
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
                 var torpedoList = this.gameState.getPlayerGameObjects()
                     .stream().filter(item -> (item.getGameObjectType() == ObjectTypeEn.TORPEDO_SALVO
-                    && getDistanceBetween(stateHolder.getBot(), item) - item.getSize() < 400))
+                    && getDistanceBetween(stateHolder.getBot(), item) - item.getSize() < 400)
+                    ||
+                    (item.getGameObjectType() == ObjectTypeEn.TELEPORTER
+                    && getDistanceBetween(stateHolder.getBot(), item) - 2 * stateHolder.getBot().getSize() < 200))
                     .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
                     .collect(Collectors.toList());
                 
                 if(torpedoList.isEmpty()){
                     this.desireAmount = -1;
                     return;
-                }
+                }   
     
                 this.playerAction.action = PlayerActionEn.FORWARD;
-                this.playerAction.heading = getHeadingDifference(stateHolder.getBot().getCurrentHeading(), rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), 90)) < 180 
-                                            ? 
-                                            rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), 90) 
-                                            : 
-                                            rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), -90);
+                this.playerAction.heading = torpedoList.get(0).getGameObjectType() == ObjectTypeEn.TORPEDO_SALVO ?
+                                                                    (
+                                                                        getHeadingDifference(stateHolder.getBot().getCurrentHeading(), rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), 90)) < 180 
+                                                                        ? 
+                                                                        rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), 90) 
+                                                                        : 
+                                                                        rotateHeadingBy(torpedoList.get(0).getCurrentHeading(), -90)
+                                                                    )                   
+                                                                        :
+                                                                        // TELEPORTER
+                                                                    (
+                                                                        rotateHeadingBy(getHeadingBetween(stateHolder.getBot(), torpedoList.get(0)), 180)
+                                                                    );
     
-                this.desireAmount = lerpInt(easeInOut(1/getDistanceBetween(stateHolder.getBot(), torpedoList.get(0))), 2, 4);
+                this.desireAmount = lerpInt(easeInOut(100/clampDouble(getDistanceBetween(stateHolder.getBot(), torpedoList.get(0)), 100, 400)), 2, 4);
                 
             }
         }
     }
 
+    /* Meng-handle pergerakan mengejar musuh yang lebih kecil */
     class EnemyChase extends MoveBotStrategy {
-        private int safeSizeThreshold = 10;
+        private int safeSizeThreshold = 20;
+        private int safeMinimumSizeThreshold = 35;
 
         void execute(){        
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
-                var playerList = this.gameState.getPlayerGameObjects()
-                    .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId())
-                    .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
-                    // .map(player -> player.getPosition())
-                    .collect(Collectors.toList());
+
                 
-                Position midPoint = Position.getCentroid(playerList);
-
-                this.playerAction.action = PlayerActionEn.FORWARD;
-                this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), midPoint);
-
                 var smallerPL = this.gameState.getPlayerGameObjects()
                     .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId() && player.getSize() + safeSizeThreshold < stateHolder.getBot().getSize())
                     .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
                     .map(player -> player.getPosition())
                     .collect(Collectors.toList());
                 
-                if(smallerPL.isEmpty()){
+                if(smallerPL.isEmpty() || stateHolder.getBot().getSize() <= safeMinimumSizeThreshold){
                     this.desireAmount = -1;
                     return;
                 }
-                    
-
-                this.desireAmount = lerpInt(easeOut(200/clampFloat((float)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 200f, 600f)), 2, 4);
-
-                this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), smallerPL.get(0));
                 
+                this.playerAction.action = PlayerActionEn.FORWARD;
+                this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), smallerPL.get(0));
+                this.desireAmount = lerpInt(easeOut(200/clampDouble(getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 200, 600)), 2, 4);
             }
 
         }
     }
 
     
-
+    /* runner code */
     public void run() {
         if(stateHolder.getBot() == null){
             botProcessor.sendMessage(new PlayerAction(), -1);
             return;
         }
 
-        FoodChase foodChase = new FoodChase();
-        EnemyEvade enemyEvade = new EnemyEvade();
-        EnemyChase enemyChase = new EnemyChase();
-        
-        
-        currentWaitTime -= Duration.between(lastCheckTime, Instant.now()).toNanos();
-        lastCheckTime = Instant.now();
-
-        List<MoveBotStrategy> toCalculate = Stream.of(foodChase, enemyEvade, enemyChase).collect(Collectors.toList());
+        List<MoveBotStrategy> toCalculate = Stream.of(new FoodChase(), 
+                                                    new EnemyEvade(), 
+                                                    new EnemyChase(), 
+                                                    new TorpedoEvade())
+                                            .collect(Collectors.toList());
         
 
         MoveBotStrategy toExecute = toCalculate
             .stream()
             .sorted(Comparator.comparing(movebot -> movebot.getDesire()))
             .collect(Collectors.toList()).get(toCalculate.size()-1);
-
-        if(currentWaitTime <= 0){
-            currentWaitTime = defaultWaitTime;
-            System.out.println("size" + stateHolder.getBot().getSize());
-        }
         
         botProcessor.sendMessage(toExecute.getPlayerAction(), toExecute.getDesire());
     }
