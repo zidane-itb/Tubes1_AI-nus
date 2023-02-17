@@ -54,8 +54,10 @@ public class ShootBot extends ActionCalculator implements ActionBot {
                 botProcessor.sendMessage(playerAction, 5);
                 snFired = false;
             }
-            if (!snFired)
+            if (!snFired){
+                botProcessor.sendMessage(playerAction, -1);
                 return;
+            }
         }
         if (bot.isSnAvailable()) {
             supernova(gameState.getPlayerGameObjects());
@@ -69,8 +71,10 @@ public class ShootBot extends ActionCalculator implements ActionBot {
     }
 
     private void supernova(List<GameObject> playerObjects) {
-        if (playerObjects == null || playerObjects.isEmpty())
+        if (playerObjects == null || playerObjects.isEmpty()){
+            botProcessor.sendMessage(playerAction, -1);
             return;
+        }
 
         GameObject largestPlayer = null;
         double size = -1, cSize;
@@ -84,6 +88,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
             }
         }
         if (largestPlayer == null) {
+            botProcessor.sendMessage(playerAction, -1);
             return;
         }
         largestPlayerId = largestPlayer.getId();
