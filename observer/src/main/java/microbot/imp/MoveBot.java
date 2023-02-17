@@ -193,39 +193,13 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     
 
     public void run() {
-        // int min = 50;
-        // int max = 100;
-        // int random_int = (int)Math.floor(Math.random() * (max -   min + 1) + min);
+        if(stateHolder.getBot() == null){
+            botProcessor.sendMessage(new PlayerAction(), -1);
+            return;
+        }
 
-        // PlayerAction playerAction = new PlayerAction();
-        // GameState gameState = stateHolder.getGameState();
-
-        // playerAction.action = PlayerActionEn.FORWARD;
-        // playerAction.heading = new Random().nextInt(360);
-
-        // if (!gameState.getGameObjects().isEmpty()) {
-        //     var foodList = gameState.getGameObjects()
-        //             .stream().filter(item -> item.getGameObjectType() == ObjectTypeEn.FOOD)
-        //             .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
-        //             .collect(Collectors.toList());
-
-        //     playerAction.heading = getHeadingBetween(stateHolder.getBot(), foodList.get(0));
-        // }
-
-        // botProcessor.sendMessage(playerAction, random_int);
-
-        // Position midPoint = new Position();
-
-        // if(!gameState.getPlayerGameObjects().isEmpty()){
-        //     var playerList = gameState.getPlayerGameObjects()
-        //         .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER)
-        //         // .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
-        //         // .limit(max)
-        //         .map(player -> player.getPosition())
-        //         .collect(Collectors.toList());
-            
-        //     midPoint = Position.getCentroid(playerList);
-        // }
+        if(stateHolder.getBot().getSize() < 5)
+            System.out.println("harusnya mati!");
 
         FoodChase foodChase = new FoodChase();
         EnemyEvade enemyEvade = new EnemyEvade();
