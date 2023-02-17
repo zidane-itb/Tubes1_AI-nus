@@ -11,6 +11,7 @@ import processor.BotProcessor;
 import microbot.ActionBot;
 import microbot.imp.MoveBot;
 import microbot.imp.ShootBot;
+import microbot.imp.ShieldBot;
 import com.microsoft.signalr.HubConnection;
 import com.microsoft.signalr.HubConnectionBuilder;
 import com.microsoft.signalr.HubConnectionState;
@@ -21,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -36,11 +39,16 @@ public class ExecHandler {
 
     public static void start() throws InterruptedException {
         Logger logger = LoggerFactory.getLogger(Main.class);
+
         BotProcessor botProcessor = new BotProcessor();
         StateHolder stateHolder = new StateHolder();
-        actionBots = new ActionBot[]{new MoveBot(botProcessor, stateHolder, new PlayerAction()),
-                new ShootBot(botProcessor, stateHolder, new PlayerAction())};
+        actionBots = new ActionBot[]{
+            new MoveBot(botProcessor, stateHolder, new PlayerAction()),
+            new ShootBot(botProcessor, stateHolder, new PlayerAction()),
+            new ShieldBot(botProcessor, stateHolder, new PlayerAction())
+        };
         executor = Executors.newFixedThreadPool(actionBots.length);
+        
         String token = System.getenv("Token");
         token = (token != null) ? token : UUID.randomUUID().toString();
 
@@ -64,8 +72,10 @@ public class ExecHandler {
             System.out.println("Registered with the runner " + id);
 
             Position position = new Position();
-            GameObject bot = new GameObject(id, 10, 20, 0, position, ObjectTypeEn.PLAYER,
-                    "0", 0, 0, 0, 0);
+            List<Integer> stateList = Stream.of(10, 20, 0, ObjectTypeEn.toValue(ObjectTypeEn.PLAYER), position.x, position.y)
+                                        .collect(Collectors.toList());
+            GameObject bot = GameObject.FromStateList((id), stateList);
+            // GameObject bot = new GameObject(id, 10, 20, 0, position, ObjectTypeEn.PLAYER);
             stateHolder.setBot(bot);
         }, UUID.class);
 
@@ -101,7 +111,7 @@ public class ExecHandler {
 
         Thread.sleep(1000);
         System.out.println("Registering with the runner...");
-        hubConnection.send("Register", token, "Coffee Bot");
+        hubConnection.send("Register", token, "AI-nus");
 
         //This is a blocking call
         hubConnection.start().subscribe(() -> {

@@ -13,4 +13,8 @@ public class PlayerAction {
   public PlayerActionEn action;
   public int heading;
 
+  public void describe(){
+    System.out.println("id : " + playerId + " action : " + action + " heading : " + heading);
+  }
+
 }
