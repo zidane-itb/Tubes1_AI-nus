@@ -25,7 +25,7 @@ Untuk memudahkan dalam proses instalasi/*resolve* dependensi, gunakan perintah m
 ```
 preintah `clean` ditambahkan untuk memudahkan dalam penataan direktori agar sesuai dengan file `pom.xml`.
 
->note : dalam file `pom.xml` yang kami buat, sepertinya program masih akan ter-compile menjadi jar bernama JavaBot.jar (bukan AI-nus.jar yang diminta oleh spesifikasi) sehingga dapat menghasilkan error ketika perintah `clean` ditambahkan
+>note : dalam file `pom.xml` yang kami buat, sepertinya program masih akan ter-compile menjadi jar bernama JavaBot.jar (bukan AI-nus.jar yang diminta oleh spesifikasi) sehingga dapat menghasilkan error ketika perintah `clean` ditambahkan. alternatif, hapus perintah `clean`.
 
 
 ## How to Run
@@ -46,7 +46,7 @@ Untuk menjalankan program, jalankan file `AI-nus.jar` yang terdapat dalam folder
 Perhatikan juga bahwa setelah dijalankan, program ini akan berusaha untuk melakukan koneksi ke host lokal dengan alamat `https://localhost:5000/` yaitu alamat koneksi yang dibuka oleh server yang dijalankan dengan menjalankan runner, logger, dan engine server yang terdapat dalam folder starter-pack yang disediakan dalam spesifikasi.
 
 
->note : dalam file `pom.xml` yang kami buat, sepertinya program masih akan ter-compile menjadi jar bernama JavaBot.jar (bukan AI-nus.jar yang diminta oleh spesifikasi) sehingga dapat menghasilkan error ketika perintah `clean` ditambahkan
+>note : dalam file `pom.xml` yang kami buat, sepertinya program masih akan ter-compile menjadi jar bernama JavaBot.jar (bukan AI-nus.jar yang diminta oleh spesifikasi) sehingga dapat menghasilkan error ketika perintah `clean` ditambahkan. alternatif, hapus perintah `clean`.
 
 ## Author(s)
 1. [13521047 - Muhammad Equilibrie Fajria](https://github.com/MuhLibri)
