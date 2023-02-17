@@ -18,6 +18,8 @@ public class StateHolder {
     private GameObject bot;
     private Map<UUID, GameObject> playerMap;
 
+    private boolean teleShot;
+
     public StateHolder() {
         gameState = new GameState();
     }
