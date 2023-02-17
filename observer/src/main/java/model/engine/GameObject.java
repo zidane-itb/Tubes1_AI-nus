@@ -20,10 +20,10 @@ public class GameObject {
   private ObjectTypeEn gameObjectType;
   private String effectHashCode;
   private int torpedoCount;
-  private int teleportCount;
   @Getter(AccessLevel.NONE)
   @Setter(AccessLevel.NONE)
   private int snAvailable;
+  private int teleportCount;
   private int shieldCount;
 
   public boolean isSnAvailable() {

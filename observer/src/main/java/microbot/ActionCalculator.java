@@ -1,7 +1,5 @@
 package microbot;
 
-// import javax.swing.text.Position; why import these? auto imports?
-
 import model.engine.Position;
 import model.engine.GameObject;
 import model.engine.PlayerAction;
@@ -21,6 +19,12 @@ public class ActionCalculator {
     protected double getDistanceBetween(GameObject object1, Position object2) {
         var triangleX = Math.abs(object1.getPosition().x - object2.x);
         var triangleY = Math.abs(object1.getPosition().y - object2.y);
+        return Math.sqrt(triangleX * triangleX + triangleY * triangleY);
+    }
+
+    protected double getDistanceBetween(GameObject object1, int x, int y) {
+        var triangleY = Math.abs(object1.getPosition().y - y);
+        var triangleX = Math.abs(object1.getPosition().x - x);
         return Math.sqrt(triangleX * triangleX + triangleY * triangleY);
     }
 
@@ -64,25 +68,19 @@ public class ActionCalculator {
     }
 
     protected int lerpInt(float value, int a, int b){
-        return (int)(clampFloat(value, 0, 1) * (b - a) + a + (0.5f * Math.signum(value)));
-    }
-
-
-    protected int slerpInt(float value, int a, int b){
-        return (int)(clampFloat((float)easeOutSine(value), 0, 1) * (b - a) + a + (0.5f * Math.signum(value)));
-    }
-
-    protected double slerp(float value, int a, int b){
-        return easeOutSine(value) * (b - a) + a;
-    }
-
-    protected double easeOutSine(float x){
-        return Math.sin((x * Math.PI) / 2);
+        return (int)(clampFloat(value, 0, 1) * (b - a) + a);
     }
     
     protected boolean isInRadius(GameObject object, GameObject target, double radius) {
+        return getDistanceBetween(object, target) <= radius;
+    }
 
-        return true;
+    protected boolean isInRadius(GameObject object, Position target, double radius) {
+        return getDistanceBetween(object, target) <= radius;
+    }
+
+    protected boolean isInRadius(GameObject object, int x, int y, double radius) {
+        return getDistanceBetween(object, x, y) <= radius;
     }
 
     protected void sendMessage(PlayerAction playerAction, int prio) {
