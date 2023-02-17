@@ -128,7 +128,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
                 var biggerPL = this.gameState.getPlayerGameObjects()
                     .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId() && player.getSize() - safeSizeThreshold >= stateHolder.getBot().getSize())
-                    .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
+                    .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player) - player.getSize()))
                     .map(player -> player.getPosition())
                     .collect(Collectors.toList());
                 
