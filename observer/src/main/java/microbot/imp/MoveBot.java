@@ -73,7 +73,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     }
 
     class FoodChase extends MoveBotStrategy {
-        private float thresholdRadius = 100f;
+        private float thresholdRadius = 200f;
 
         private final int foodAmoundThreshold = 30;
 
@@ -117,7 +117,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER 
                     && player.getId() != stateHolder.getBot().getId() 
                     && player.getSize() - safeSizeThreshold >= stateHolder.getBot().getSize()
-                    && getDistanceBetween(stateHolder.getBot(), player) < 500)
+                    && getDistanceBetween(stateHolder.getBot(), player) - player.getSize() < 500)
                     .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player) - player.getSize()))
                     // .map(player -> player.getPosition())
                     .collect(Collectors.toList());
@@ -131,10 +131,6 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
                 this.playerAction.action = PlayerActionEn.FORWARD;
                 this.playerAction.heading = rotateHeadingBy(getHeadingBetween(stateHolder.getBot(), midPoint), 180);
-
-                
-                
-                    
 
                 this.desireAmount = lerpInt(easeInOut(1/getDistanceBetween(stateHolder.getBot(), playerList.get(0))), 1, 4);
                 
@@ -173,7 +169,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 }
                     
 
-                this.desireAmount = lerpInt(easeOut(200/clampFloat((float)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 200f, 600f)), 3, 4);
+                this.desireAmount = lerpInt(easeOut(200/clampFloat((float)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 200f, 600f)), 2, 4);
 
                 this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), smallerPL.get(0));
                 
