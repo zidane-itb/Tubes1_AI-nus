@@ -1,5 +1,6 @@
 # ***DISCLAIMER***
-Abaikan struktur folder ini dan segera buka folder `observer/`
+Abaikan struktur folder ini dan segera buka folder [`observer/`](https://github.com/zidane-itb/Tubes1_AInus/tree/main/observer).
+
 Struktur file dari repository ini tidak dapat menyesuaikan dengan kebutuhan spesifikasi karena mempertimbangkan beresikonya pengaturan kembali pom.xml dan package(s).
 
 # AI-nus
