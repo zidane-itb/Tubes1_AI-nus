@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public class ShieldBot extends ActionCalculator implements ActionBot {
     private final BotProcessor botProcessor;
     private final StateHolder stateHolder;
+    private final PlayerAction playerAction;
 
     private boolean calculateTorpedoHit (List<GameObject> torpedoList, int botSize) {
         boolean hit = false;
@@ -53,10 +54,9 @@ public class ShieldBot extends ActionCalculator implements ActionBot {
     }
 
     public void run () {
-        int priorityNum = 0;
-        PlayerAction playerAction = new PlayerAction();
+        int priorityNum = 3;
         GameState gameState = stateHolder.getGameState();
-        playerAction.action = PlayerActionEn.ACTIVATESHIELD;
+        playerAction.setAction(PlayerActionEn.ACTIVATESHIELD);
         int botSize = stateHolder.getBot().getSize();
         int shieldCount = stateHolder.getBot().getShieldCount();
 
