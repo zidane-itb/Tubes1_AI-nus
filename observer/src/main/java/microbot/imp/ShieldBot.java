@@ -54,6 +54,12 @@ public class ShieldBot extends ActionCalculator implements ActionBot {
     }
 
     public void run () {
+
+        if(stateHolder.getBot() == null){
+            botProcessor.sendMessage(playerAction, -1);
+            return;
+        }
+
         int priorityNum = 3;
         GameState gameState = stateHolder.getGameState();
         playerAction.setAction(PlayerActionEn.ACTIVATESHIELD);
