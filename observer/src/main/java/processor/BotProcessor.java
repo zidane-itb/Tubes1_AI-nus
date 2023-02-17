@@ -1,5 +1,6 @@
 package processor;
 
+import enums.PlayerActionEn;
 import lombok.Getter;
 import lombok.Setter;
 import model.engine.PlayerAction;
@@ -37,7 +38,17 @@ public class BotProcessor {
             playerActions.clear();
             return;
         }
-        // TODO: compute action when player actions has more than 1 element
+        resultExist = true;
+        boolean found = false;
+        for (PlayerAction playerAction1: playerActions) {
+            if (playerAction1.getAction()== PlayerActionEn.TELEPORT) {
+                this.playerAction = playerAction1;
+                found=true;
+                break;
+            }
+        }
+        if (!found)
+            this.playerAction = playerActions.get(0);
         playerActions.clear();
     }
 
