@@ -40,7 +40,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
     private final BotProcessor botProcessor;
     private final StateHolder stateHolder;
-    private final PlayerAction playerAction; // ngikutin constructor lombok
+    private final PlayerAction globalPlayerAction; // ngikutin constructor lombok
 
     abstract class MoveBotStrategy{
         final int randomOffset = 3;
@@ -66,7 +66,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
         }
 
         public int getDesire(){
-            return clampInt((int)Math.floor(Math.random() * (2 * randomOffset) - randomOffset  + desireAmount), 0, 100);
+            return this.desireAmount;
         }
 
         abstract void execute();
@@ -84,7 +84,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
             if (!this.gameState.getGameObjects().isEmpty()) {
                 var foodList = this.gameState.getGameObjects()
-                        .stream().filter(item -> item.getGameObjectType() == ObjectTypeEn.FOOD)
+                        .stream().filter(item -> item.getGameObjectType() == ObjectTypeEn.FOOD || item.getGameObjectType() == ObjectTypeEn.SUPER_FOOD)
                         .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
                         .collect(Collectors.toList());
 
@@ -94,7 +94,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                         .stream().filter(food -> getDistanceBetween(stateHolder.getBot(), food) < thresholdRadius)
                         .collect(Collectors.toList());
                 
-                this.desireAmount = lerpInt((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold, 70, 85);
+                this.desireAmount = lerpInt((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold, 2, 5);
 
                 if(currentWaitTime <= 0){
                     System.out.println((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold + " dari " + (float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold) + " / " + this.foodAmoundThreshold);
@@ -132,16 +132,17 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     .map(player -> player.getPosition())
                     .collect(Collectors.toList());
                 
-                if(biggerPL.isEmpty())
+                if(biggerPL.isEmpty()){
+                    this.desireAmount = -1;
                     return;
-
-
-                if(getDistanceBetween(stateHolder.getBot(), biggerPL.get(0)) > thresholdRadius){
-                    this.desireAmount = 50;
-                } else {
-                    // this.desireAmount = lerpInt(1/ clampFloat((float)getDistanceBetween(stateHolder.getBot(), Position.getCentroid(biggerPL)), 1f, thresholdRadius), 70, 78);
-                    this.desireAmount = lerpInt(1/(float)getDistanceBetween(stateHolder.getBot(), biggerPL.get(0)), 60, 85);
                 }
+                    
+
+
+                
+                // this.desireAmount = lerpInt(1/ clampFloat((float)getDistanceBetween(stateHolder.getBot(), Position.getCentroid(biggerPL)), 1f, thresholdRadius), 70, 78);
+                this.desireAmount = lerpInt(1/(float)getDistanceBetween(stateHolder.getBot(), biggerPL.get(0)), 1, 4);
+                
             }
 
         }
@@ -173,18 +174,19 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                     .map(player -> player.getPosition())
                     .collect(Collectors.toList());
                 
-                if(smallerPL.isEmpty())
+                if(smallerPL.isEmpty()){
+                    this.desireAmount = -1;
                     return;
-
-
-                if(getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)) > thresholdRadius){
-                    this.desireAmount = 50; // let it
-                } else {
-                    // this.desireAmount = lerpInt(1/ clampFloat((float)getDistanceBetween(stateHolder.getBot(), Position.getCentroid(biggerPL)), 1f, thresholdRadius), 70, 78);
-                    this.desireAmount = lerpInt(1/(float)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 60, 85);
-
-                    this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), smallerPL.get(0));
                 }
+                    
+
+
+                
+                // this.desireAmount = lerpInt(1/ clampFloat((float)getDistanceBetween(stateHolder.getBot(), Position.getCentroid(biggerPL)), 1f, thresholdRadius), 70, 78);
+                this.desireAmount = lerpInt(200/clampFloat((float)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 200, 600), 3, 4);
+
+                this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), smallerPL.get(0));
+                
             }
 
         }
