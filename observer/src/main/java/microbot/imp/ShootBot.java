@@ -116,7 +116,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
         playerAction.setAction(PlayerActionEn.FIRETORPEDOES);
         playerAction.setHeading(getHeadingBetween(stateHolder.getBot(), closestPlayer));
 
-        botProcessor.sendMessage(playerAction, lerpInt(easeIn(100 / clampDouble(getDistanceBetween(stateHolder.getBot(), closestPlayer) - closestPlayer.getSize(), 100, 500)), 2, 4));
+        botProcessor.sendMessage(playerAction, 3);
     }
 
     private double torpedoThreshold(double size) {

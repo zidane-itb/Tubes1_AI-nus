@@ -21,7 +21,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.Random;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -73,9 +72,9 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     }
 
     class FoodChase extends MoveBotStrategy {
-        private float thresholdRadius = 100f;
+        // private float thresholdRadius = 200f;
 
-        private final int foodAmoundThreshold = 30;
+        private final int foodAmoundThreshold = 40;
 
         void execute(){
 
@@ -84,21 +83,51 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
             if (!this.gameState.getGameObjects().isEmpty()) {
                 var foodList = this.gameState.getGameObjects()
-                        .stream().filter(item -> item.getGameObjectType() == ObjectTypeEn.FOOD || item.getGameObjectType() == ObjectTypeEn.SUPER_FOOD)
+                        .stream().filter(item -> item.getGameObjectType() == ObjectTypeEn.FOOD 
+                        || item.getGameObjectType() == ObjectTypeEn.SUPER_FOOD
+                        || item.getGameObjectType() == ObjectTypeEn.SUPERNOVA_PICKUP)
                         .sorted(Comparator.comparing(item -> getDistanceBetween(stateHolder.getBot(), item)))
                         .collect(Collectors.toList());
 
-                this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), foodList.get(0));
+                int valueNearby = 0;
+                double tempGreedyVal, maxGreedyVal = 0;
+                // GameObject target;
 
-                var insideThresholdFood = foodList
-                        .stream().filter(food -> getDistanceBetween(stateHolder.getBot(), food) < thresholdRadius)
-                        .collect(Collectors.toList());
-                
-                this.desireAmount = lerpInt(easeInOut((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold), 2, 5);
+                for(GameObject item : foodList){
+                    for(GameObject nearbyItem : this.gameState.getGameObjects()){
+                        if(getDistanceBetween(nearbyItem, item) > 200)
+                            continue;
 
-                if(currentWaitTime <= 0){
-                    System.out.println((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold + " dari " + (float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold) + " / " + this.foodAmoundThreshold);
+                        if(nearbyItem.getGameObjectType() == ObjectTypeEn.FOOD)
+                            valueNearby += 1;
+                        if(nearbyItem.getGameObjectType() == ObjectTypeEn.SUPER_FOOD)
+                            valueNearby += 3;
+                        if(nearbyItem.getGameObjectType() == ObjectTypeEn.SUPERNOVA_PICKUP)
+                            valueNearby += 9;
+                    }
+
+                    tempGreedyVal = valueNearby / getDistanceBetween(stateHolder.getBot(), item);
+
+                    if(maxGreedyVal < tempGreedyVal){
+                        maxGreedyVal = tempGreedyVal;
+                        this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), item);
+                        this.desireAmount = lerpInt(easeInOut((float)clampInt(valueNearby, 0, this.foodAmoundThreshold)/this.foodAmoundThreshold), 2, 4);
+                    }
+
+                    valueNearby = 0;
+                    tempGreedyVal = 0;
                 }
+
+
+                // this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), foodList.get(0));
+
+                // var insideThresholdFood = foodList
+                //         .stream().filter(food -> getDistanceBetween(stateHolder.getBot(), food) < thresholdRadius)
+                //         .collect(Collectors.toList());
+                
+                // this.desireAmount = lerpInt(easeInOut((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold), 2, 4);
+
+                
                 
             }
 
@@ -107,19 +136,20 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     }
 
     class EnemyEvade extends MoveBotStrategy {
-        private int safeSizeThreshold = 20;
+        private int safeSizeThreshold = 30;
 
         void execute(){        
             // Position midPoint = new Position();
 
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
                 var playerList = this.gameState.getPlayerGameObjects()
-                    .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER 
+                    .stream().filter(player -> (player.getGameObjectType() == ObjectTypeEn.PLAYER 
                     && player.getId() != stateHolder.getBot().getId() 
-                    && player.getSize() - safeSizeThreshold >= stateHolder.getBot().getSize()
-                    && getDistanceBetween(stateHolder.getBot(), player) < 500)
-                    .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player) - player.getSize()))
-                    // .map(player -> player.getPosition())
+                    && player.getSize() - safeSizeThreshold > stateHolder.getBot().getSize()
+                    && getDistanceBetween(stateHolder.getBot(), player) - player.getSize() < 500)
+                    || 
+                    (player.getGameObjectType() == ObjectTypeEn.GAS_CLOUD
+                    && getDistanceBetween(stateHolder.getBot(), player) - player.getSize() < 200))
                     .collect(Collectors.toList());
                 
                 if(playerList.isEmpty()){
@@ -132,10 +162,6 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 this.playerAction.action = PlayerActionEn.FORWARD;
                 this.playerAction.heading = rotateHeadingBy(getHeadingBetween(stateHolder.getBot(), midPoint), 180);
 
-                
-                
-                    
-
                 this.desireAmount = lerpInt(easeInOut(1/getDistanceBetween(stateHolder.getBot(), playerList.get(0))), 1, 4);
                 
             }
@@ -144,8 +170,6 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
     }
 
     class EnemyChase extends MoveBotStrategy {
-        private float thresholdRadius = 150f;
-
         private int safeSizeThreshold = 10;
 
         void execute(){        
@@ -173,7 +197,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 }
                     
 
-                this.desireAmount = lerpInt(easeOut(200/clampFloat((float)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 200f, 600f)), 3, 4);
+                this.desireAmount = lerpInt(easeOut(200/clampFloat((float)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 200f, 600f)), 2, 4);
 
                 this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), smallerPL.get(0));
                 
@@ -189,9 +213,6 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
             botProcessor.sendMessage(new PlayerAction(), -1);
             return;
         }
-
-        if(stateHolder.getBot().getSize() < 5)
-            System.out.println("harusnya mati!");
 
         FoodChase foodChase = new FoodChase();
         EnemyEvade enemyEvade = new EnemyEvade();
