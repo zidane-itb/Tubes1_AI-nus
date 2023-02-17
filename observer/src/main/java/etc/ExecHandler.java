@@ -60,7 +60,7 @@ public class ExecHandler {
         Logger logger = LoggerFactory.getLogger(Main.class);
         BotProcessor botProcessor = new BotProcessor();
         StateHolder stateHolder = new StateHolder();
-        TeleportBot teleportBot = new TeleportBot(botProcessor, stateHolder, new PlayerAction());
+        PlayerAction playerAction = new PlayerAction();
         actionBots = new ActionBot[]{
             new MoveBot(botProcessor, stateHolder, new PlayerAction()),
             new ShootBot(botProcessor, stateHolder, new PlayerAction()),
@@ -134,10 +134,12 @@ public class ExecHandler {
         Thread.sleep(1000);
         System.out.println("Registering with the runner...");
         hubConnection.send("Register", token, "AI-nus");
+        stateHolder.setTeleShot(false);
 
         //This is a blocking call
         hubConnection.start().subscribe(() -> {
             while (hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
+                Thread.sleep(20);
                 if (isAllThreadsIdle()&&!botProcessor.isResultExist()) {
                     for (ActionBot actionBot: actionBots) {
                         executor.execute(actionBot::run);
@@ -150,23 +152,20 @@ public class ExecHandler {
                 if (bot == null) {
                     continue;
                 }
-                PlayerAction playerAction = botProcessor.getPlayerAction();
+                PlayerAction temp = botProcessor.getPlayerAction();
+                playerAction.setAction(temp.getAction());
+                playerAction.setHeading(temp.getHeading());
                 playerAction.setPlayerId(bot.getId());
                 if (hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
                     hubConnection.send("SendPlayerAction", playerAction);
                     if (playerAction.getAction() ==PlayerActionEn.FIRETELEPORT) {
-                        teleportBot.setShot(true);
+                        stateHolder.setTeleShot(true);
                     }
                     if (playerAction.getAction()==PlayerActionEn.TELEPORT) {
-                        System.out.println("tele " + bot.getTeleportCount()+ " tick: " + stateHolder.getGameState().getWorld().getCurrentTick());
-                        teleportBot.setShot(false);
+                        stateHolder.setTeleShot(false);
                     }
-                    if (!isAllThreadsIdle())
-                        continue;
                 }
-                for (ActionBot actionBot: actionBots) {
-                    executor.execute(actionBot::run);
-                }
+
             }
         });
 
