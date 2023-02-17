@@ -94,7 +94,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                         .stream().filter(food -> getDistanceBetween(stateHolder.getBot(), food) < thresholdRadius)
                         .collect(Collectors.toList());
                 
-                this.desireAmount = lerpInt((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold, 2, 5);
+                this.desireAmount = lerpInt(easeInOut((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold), 2, 5);
 
                 if(currentWaitTime <= 0){
                     System.out.println((float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold)/this.foodAmoundThreshold + " dari " + (float)clampInt(insideThresholdFood.size(), 0, this.foodAmoundThreshold) + " / " + this.foodAmoundThreshold);
@@ -114,32 +114,29 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
 
             if(!this.gameState.getPlayerGameObjects().isEmpty()){
                 var playerList = this.gameState.getPlayerGameObjects()
-                    .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId())
-                    .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
-                    .map(player -> player.getPosition())
+                    .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER 
+                    && player.getId() != stateHolder.getBot().getId() 
+                    && player.getSize() - safeSizeThreshold >= stateHolder.getBot().getSize()
+                    && getDistanceBetween(stateHolder.getBot(), player) < 500)
+                    .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player) - player.getSize()))
+                    // .map(player -> player.getPosition())
                     .collect(Collectors.toList());
                 
+                if(playerList.isEmpty()){
+                    this.desireAmount = -1;
+                    return;
+                }
+
                 Position midPoint = Position.getCentroid(playerList);
 
                 this.playerAction.action = PlayerActionEn.FORWARD;
                 this.playerAction.heading = rotateHeadingBy(getHeadingBetween(stateHolder.getBot(), midPoint), 180);
 
-                var biggerPL = this.gameState.getPlayerGameObjects()
-                    .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId() && player.getSize() - safeSizeThreshold >= stateHolder.getBot().getSize())
-                    .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player) - player.getSize()))
-                    .map(player -> player.getPosition())
-                    .collect(Collectors.toList());
                 
-                if(biggerPL.isEmpty()){
-                    this.desireAmount = -1;
-                    return;
-                }
+                
                     
 
-
-                
-                // this.desireAmount = lerpInt(1/ clampFloat((float)getDistanceBetween(stateHolder.getBot(), Position.getCentroid(biggerPL)), 1f, thresholdRadius), 70, 78);
-                this.desireAmount = lerpInt(1/(float)getDistanceBetween(stateHolder.getBot(), biggerPL.get(0)), 1, 4);
+                this.desireAmount = lerpInt(easeInOut(1/getDistanceBetween(stateHolder.getBot(), playerList.get(0))), 1, 4);
                 
             }
 
@@ -156,7 +153,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 var playerList = this.gameState.getPlayerGameObjects()
                     .stream().filter(player -> player.getGameObjectType() == ObjectTypeEn.PLAYER && player.getId() != stateHolder.getBot().getId())
                     .sorted(Comparator.comparing(player -> getDistanceBetween(stateHolder.getBot(), player)))
-                    .map(player -> player.getPosition())
+                    // .map(player -> player.getPosition())
                     .collect(Collectors.toList());
                 
                 Position midPoint = Position.getCentroid(playerList);
@@ -176,10 +173,7 @@ public class MoveBot  extends ActionCalculator implements ActionBot {
                 }
                     
 
-
-                
-                // this.desireAmount = lerpInt(1/ clampFloat((float)getDistanceBetween(stateHolder.getBot(), Position.getCentroid(biggerPL)), 1f, thresholdRadius), 70, 78);
-                this.desireAmount = lerpInt(200/clampFloat((float)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 200, 600), 3, 4);
+                this.desireAmount = lerpInt(easeOut(200/clampFloat((float)getDistanceBetween(stateHolder.getBot(), smallerPL.get(0)), 200f, 600f)), 3, 4);
 
                 this.playerAction.heading = getHeadingBetween(stateHolder.getBot(), smallerPL.get(0));
                 
