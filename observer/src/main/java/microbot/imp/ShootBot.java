@@ -95,8 +95,10 @@ public class ShootBot extends ActionCalculator implements ActionBot {
     }
 
     private void torpedoes(List<GameObject> playerObjects, GameObject bot) {
-        if (playerObjects == null || playerObjects.isEmpty())
+        if (playerObjects == null || playerObjects.isEmpty()) {
+            botProcessor.sendMessage(playerAction, -1);
             return;
+        }
 
         GameObject closestPlayer = null;
         double closestDist = -1, temp;
@@ -111,6 +113,7 @@ public class ShootBot extends ActionCalculator implements ActionBot {
         }
         if (closestPlayer == null
                 || closestDist-closestPlayer.getSize() > torpedoThreshold(bot.getSize())) {
+            botProcessor.sendMessage(playerAction, -1);
             return;
         }
         playerAction.setAction(PlayerActionEn.FIRETORPEDOES);
